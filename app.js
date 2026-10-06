@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         dict: document.getElementById('dictionary-screen')
     };
 
-    // データ読み込み
+    // 過去問データと用語集データの読み込み
     Promise.all([
         fetch('questions.json').then(res => res.json()),
         fetch('dictionary.json').then(res => res.json())
@@ -27,12 +27,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateStreakDisplay();
 
+    // 画面切り替え関数
     function showScreen(screenName) {
         Object.values(screens).forEach(s => s.classList.remove('active'));
         screens[screenName].classList.add('active');
-        window.scrollTo(0, 0);
+        window.scrollTo(0, 0); // 画面遷移時に上へスクロール
     }
 
+    // メニューボタンの生成
     function setupCategoryButtons() {
         const container = document.getElementById('course-buttons-container');
         
@@ -57,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
         `;
 
+        // クイズ開始イベント
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const target = e.currentTarget;
@@ -66,38 +69,53 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        // 用語集を開くイベント
         document.getElementById('open-dict-btn').addEventListener('click', () => {
             showScreen('dict');
         });
     }
 
+    // ★用語集のレンダリング（完全対応版）★
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
+        if (!list) return;
         list.innerHTML = '';
+        
         dictionary.forEach(item => {
+            const termName = item.term || item.name || item.word || '用語名なし';
+            const yomiText = item.yomi || item.reading || '';
+            const descText = item.description || item.desc || item.explanation || '解説はありません。';
+            
             const div = document.createElement('div');
             div.className = 'dict-item';
             
-            let termHtml = `<h4>${item.term}</h4>`;
-            if (item.yomi) {
-                termHtml += `<div class="yomi">（${item.yomi}）</div>`;
+            let yomiHtml = '';
+            if (yomiText && yomiText !== termName) {
+                yomiHtml = `<div class="yomi">（${yomiText}）</div>`;
             }
             
-            div.innerHTML = `${termHtml}<p class="desc">${item.description}</p>`;
+            div.innerHTML = `
+                <h4>${termName}</h4>
+                ${yomiHtml}
+                <p class="desc">${descText}</p>
+            `;
             list.appendChild(div);
         });
     }
 
+    // 用語集からホームへ戻るイベント
     document.getElementById('close-dict-btn').addEventListener('click', () => {
         showScreen('home');
     });
 
+    // クイズの途中で退出するイベント
     document.getElementById('exit-quiz-btn').addEventListener('click', () => {
         if (confirm("クイズを終了してホームに戻りますか？\n（ここまでの正解は記録されません）")) {
             showScreen('home');
         }
     });
 
+    // クイズ開始処理
     function startQuiz(category, limit) {
         let pool = [];
         if (category === 'ALL') {
@@ -106,11 +124,13 @@ document.addEventListener("DOMContentLoaded", () => {
             pool = allQuestions.filter(q => q.category === category);
         }
 
+        // Fisher-Yates シャッフル
         for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]];
         }
 
+        // 指定された問題数（15問 or 5問）を抽出
         currentQuizSet = pool.slice(0, limit);
         currentQuestionIndex = 0;
         score = 0;
@@ -119,12 +139,14 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('quiz');
     }
 
+    // 問題の読み込みと表示
     function loadQuestion() {
         const q = currentQuizSet[currentQuestionIndex];
         document.getElementById('question-text').innerText = `【問${q.id}】\n${q.question}`;
         document.getElementById('category-label').innerText = q.category;
         document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1}/${currentQuizSet.length}`;
         
+        // プログレスバーの更新
         const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 100;
         document.getElementById('progress-fill').style.width = `${progressPercent}%`;
 
@@ -140,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ★リッチな解説表示への改修部分★
+    // リッチな解説表示（正誤判定）
     function checkAnswer(selectedIndex, correctIndex, explanation) {
         const sheet = document.getElementById('explanation-sheet');
         const overlay = document.getElementById('overlay');
@@ -171,10 +193,12 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.classList.add('show');
     }
 
+    // 次の問題へ
     document.getElementById('next-btn').addEventListener('click', () => {
         document.getElementById('explanation-sheet').classList.remove('show');
         document.getElementById('overlay').classList.remove('show');
         
+        // シートが下がるアニメーションを待つ
         setTimeout(() => {
             currentQuestionIndex++;
             if (currentQuestionIndex < currentQuizSet.length) {
@@ -185,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 300);
     });
 
+    // 結果画面表示
     function showResult() {
         document.getElementById('progress-fill').style.width = '100%';
         document.getElementById('score-text').innerText = `${score} / ${currentQuizSet.length} 問 正解`;
@@ -192,10 +217,12 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('result');
     }
 
+    // 結果画面からホームへ戻る
     document.getElementById('home-btn').addEventListener('click', () => {
         showScreen('home');
     });
 
+    // 連続記録（ストリーク）の管理
     function updateStreakDisplay() {
         const streak = localStorage.getItem('streak') || 0;
         document.getElementById('streak-count').innerText = `${streak}日連続`;
