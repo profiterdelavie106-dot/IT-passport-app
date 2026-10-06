@@ -2,9 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ITパスポート 試験対策（試作）</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ITパスポート 5分道場</title>
+    <!-- Google Fonts & Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,27 +14,31 @@
         <!-- ホーム画面 -->
         <section id="home-screen" class="screen active">
             <div class="header">
-                <h2>ITパスポート 試験対策（試作）</h2>
+                <h2>ITパスポート道場</h2>
                 <div class="stats">
-                    <button id="open-dict-btn" class="icon-btn" title="用語集を開く">
-                        <span class="material-icons">menu_book</span>
-                    </button>
-                    <span class="material-icons">local_fire_department</span>
-                    <span id="streak-count">0日連続</span>
+                    <span class="material-icons fire-icon">local_fire_department</span>
+                    <span id="streak-count" class="streak-text">0日連続</span>
                 </div>
             </div>
-            <div class="card">
+            
+            <div class="card main-card">
+                <h3 class="card-title">学習コースを選択</h3>
+                <p class="card-subtitle">隙間時間で知識を定着させましょう</p>
+                
                 <!-- JSで動的にボタンが生成されます -->
+                <div id="course-buttons-container"></div>
             </div>
         </section>
 
         <!-- 用語集画面 -->
         <section id="dictionary-screen" class="screen">
             <div class="header">
-                <h2>用語集 (令和8年度)</h2>
-                <button id="close-dict-btn" class="icon-btn" title="閉じる">
-                    <span class="material-icons">close</span>
+                <!-- 戻るボタン -->
+                <button id="close-dict-btn" class="icon-btn" title="ホームに戻る">
+                    <span class="material-icons">arrow_back</span>
                 </button>
+                <h2>用語集 (令和8年度)</h2>
+                <div style="width: 40px;"></div> <!-- レイアウト調整用余白 -->
             </div>
             <div id="dictionary-list" class="dictionary-list">
                 <!-- JSで動的に用語が生成されます -->
@@ -42,17 +47,29 @@
 
         <!-- 問題画面 -->
         <section id="quiz-screen" class="screen">
-            <div class="progress-bar">
-                <div id="progress-fill"></div>
-            </div>
             <div class="header-quiz">
-                <span id="category-label" class="chip">カテゴリ</span>
-                <span id="question-count-label">1/5</span>
+                <!-- 途中で退出するボタン -->
+                <button id="exit-quiz-btn" class="icon-btn exit-btn" title="途中で退出する">
+                    <span class="material-icons">close</span>
+                </button>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progress-fill"></div>
+                    </div>
+                    <span id="question-count-label">1/5</span>
+                </div>
             </div>
+
+            <div class="chip-container">
+                <span id="category-label" class="chip">カテゴリ</span>
+            </div>
+
             <div class="card question-card">
                 <p id="question-text">問題文</p>
             </div>
-            <div id="options-container"></div>
+            <div id="options-container">
+                <!-- 選択肢が生成されます -->
+            </div>
         </section>
 
         <!-- 結果画面 -->
@@ -63,19 +80,25 @@
             <div class="card result-card">
                 <span class="material-icons result-icon">emoji_events</span>
                 <h3 id="score-text">0 / 0 問 正解</h3>
-                <p>よく頑張りました！</p>
-                <button id="home-btn" class="btn-secondary">ホームへ戻る</button>
+                <p class="result-message">お疲れ様でした。毎日の積み重ねが合格への近道です！</p>
+                <button id="home-btn" class="md-btn md-btn-primary">
+                    <span class="material-icons">home</span> ホームへ戻る
+                </button>
             </div>
         </section>
 
         <!-- 解説ボトムシート -->
         <div id="explanation-sheet" class="bottom-sheet hidden">
+            <div class="sheet-handle"></div>
             <h3 id="judgement-text">正解！</h3>
             <p id="explanation-text">解説文</p>
-            <button id="next-btn" class="btn-primary">次の問題へ</button>
+            <button id="next-btn" class="md-btn md-btn-primary">次の問題へ</button>
         </div>
+        
+        <!-- モーダル用オーバーレイ -->
         <div id="overlay" class="hidden"></div>
     </div>
+    
     <script src="app.js"></script>
 </body>
 </html>
