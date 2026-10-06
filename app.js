@@ -75,14 +75,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 用語集のレンダリング
+   // 用語集のレンダリング
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         list.innerHTML = '';
         dictionary.forEach(item => {
             const div = document.createElement('div');
             div.className = 'dict-item';
-            div.innerHTML = `<h4>${item.term}</h4><p>${item.description}</p>`;
+            
+            let termHtml = `<h4>${item.term}</h4>`;
+            if (item.yomi) {
+                termHtml += `<div class="yomi">（${item.yomi}）</div>`;
+            }
+            
+            div.innerHTML = `${termHtml}<p class="desc">${item.description}</p>`;
             list.appendChild(div);
         });
     }
