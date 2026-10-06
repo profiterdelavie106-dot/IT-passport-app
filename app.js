@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         dict: document.getElementById('dictionary-screen')
     };
 
-    // 過去問データと用語集データの読み込み
+    // データ読み込み
     Promise.all([
         fetch('questions.json').then(res => res.json()),
         fetch('dictionary.json').then(res => res.json())
@@ -21,41 +21,57 @@ document.addEventListener("DOMContentLoaded", () => {
         dictionary = dictData;
         setupCategoryButtons();
         renderDictionary();
+    }).catch(err => {
+        console.error("データの読み込みに失敗しました:", err);
     });
 
     updateStreakDisplay();
 
+    // 画面切り替え関数
     function showScreen(screenName) {
         Object.values(screens).forEach(s => s.classList.remove('active'));
         screens[screenName].classList.add('active');
+        window.scrollTo(0, 0); // 画面遷移時に上へスクロール
     }
 
-    // コース選択ボタンの生成（令和8年度・令和7年度の枠組み）
+    // メニューボタンの生成
     function setupCategoryButtons() {
-        const homeCard = document.querySelector('#home-screen .card');
+        const container = document.getElementById('course-buttons-container');
         
-        homeCard.innerHTML = `
-            <div class="course-group">
-                <h4 style="margin-bottom: 12px; color: var(--primary);">【令和8年度 過去問】</h4>
-                <button class="btn-primary mode-btn" data-category="ALL" style="margin-bottom:8px;">🎲 全分野からランダム（5問）</button>
-                <button class="btn-secondary mode-btn" data-category="ストラテジ系" style="margin-bottom:8px;">📊 ストラテジ系（5問）</button>
-                <button class="btn-secondary mode-btn" data-category="マネジメント系" style="margin-bottom:8px;">👥 マネジメント系（5問）</button>
-                <button class="btn-secondary mode-btn" data-category="テクノロジ系" style="margin-bottom:16px;">💻 テクノロジ系（5問）</button>
-            </div>
+        container.innerHTML = `
+            <button class="md-btn md-btn-primary mode-btn" data-category="ALL" data-limit="15">
+                <span class="material-icons">casino</span> 全分野からランダム（15問）
+            </button>
+            <button class="md-btn md-btn-secondary mode-btn" data-category="ストラテジ系" data-limit="5">
+                <span class="material-icons">bar_chart</span> ストラテジ系（5問）
+            </button>
+            <button class="md-btn md-btn-secondary mode-btn" data-category="マネジメント系" data-limit="5">
+                <span class="material-icons">people</span> マネジメント系（5問）
+            </button>
+            <button class="md-btn md-btn-secondary mode-btn" data-category="テクノロジ系" data-limit="5">
+                <span class="material-icons">computer</span> テクノロジ系（5問）
+            </button>
             
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 16px 0;">
+            <div style="margin: 24px 0 12px 0; border-top: 1px solid var(--md-outline); opacity: 0.3;"></div>
             
-            <div class="course-group" style="opacity: 0.6;">
-                <h4 style="margin-bottom: 12px; color: #757575;">【令和7年度 過去問】</h4>
-                <button class="btn-secondary" disabled style="margin-bottom:8px; cursor:not-allowed;">🚧 準備中（近日公開）</button>
-            </div>
+            <button id="open-dict-btn" class="md-btn md-btn-outline">
+                <span class="material-icons">menu_book</span> 令和8年度 過去問用語集
+            </button>
         `;
 
+        // クイズ開始イベント
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const category = e.target.getAttribute('data-category');
-                startQuiz(category);
+                const target = e.currentTarget;
+                const category = target.getAttribute('data-category');
+                const limit = parseInt(target.getAttribute('data-limit'));
+                startQuiz(category, limit);
             });
+        });
+
+        // 用語集を開くイベント
+        document.getElementById('open-dict-btn').addEventListener('click', () => {
+            showScreen('dict');
         });
     }
 
@@ -71,15 +87,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 辞書画面の開閉イベント
-    document.getElementById('open-dict-btn').addEventListener('click', () => {
-        showScreen('dict');
-    });
+    // 用語集からホームへ戻るイベント
     document.getElementById('close-dict-btn').addEventListener('click', () => {
         showScreen('home');
     });
 
-    function startQuiz(category) {
+    // クイズの途中で退出するイベント
+    document.getElementById('exit-quiz-btn').addEventListener('click', () => {
+        if (confirm("クイズを終了してホームに戻りますか？\n（ここまでの正解は記録されません）")) {
+            showScreen('home');
+        }
+    });
+
+    // クイズ開始処理
+    function startQuiz(category, limit) {
         let pool = [];
         if (category === 'ALL') {
             pool = [...allQuestions];
@@ -87,24 +108,31 @@ document.addEventListener("DOMContentLoaded", () => {
             pool = allQuestions.filter(q => q.category === category);
         }
 
+        // Fisher-Yates シャッフル
         for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]];
         }
 
-        currentQuizSet = pool.slice(0, 5);
+        // 指定された問題数（15問 or 5問）を抽出
+        currentQuizSet = pool.slice(0, limit);
         currentQuestionIndex = 0;
         score = 0;
+        
         loadQuestion();
         showScreen('quiz');
     }
 
+    // 問題の読み込みと表示
     function loadQuestion() {
         const q = currentQuizSet[currentQuestionIndex];
-        document.getElementById('question-text').innerText = `【問${q.id}】\n` + q.question;
+        document.getElementById('question-text').innerText = `【問${q.id}】\n${q.question}`;
         document.getElementById('category-label').innerText = q.category;
-        document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1} / ${currentQuizSet.length}`;
-        document.getElementById('progress-fill').style.width = `${((currentQuestionIndex) / currentQuizSet.length) * 100}%`;
+        document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1}/${currentQuizSet.length}`;
+        
+        // プログレスバーの更新
+        const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 100;
+        document.getElementById('progress-fill').style.width = `${progressPercent}%`;
 
         const optionsContainer = document.getElementById('options-container');
         optionsContainer.innerHTML = '';
@@ -118,6 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // 正誤判定
     function checkAnswer(selectedIndex, correctIndex, explanation) {
         const sheet = document.getElementById('explanation-sheet');
         const overlay = document.getElementById('overlay');
@@ -125,11 +154,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const expText = document.getElementById('explanation-text');
 
         if (selectedIndex === correctIndex) {
-            judgeText.innerText = "正解！";
+            judgeText.innerText = "正解！ 🎉";
             judgeText.className = "correct";
             score++;
         } else {
-            judgeText.innerText = "不正解...";
+            judgeText.innerText = "不正解... 😢";
             judgeText.className = "incorrect";
         }
         
@@ -138,18 +167,23 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.classList.add('show');
     }
 
+    // 次の問題へ
     document.getElementById('next-btn').addEventListener('click', () => {
         document.getElementById('explanation-sheet').classList.remove('show');
         document.getElementById('overlay').classList.remove('show');
         
-        currentQuestionIndex++;
-        if (currentQuestionIndex < currentQuizSet.length) {
-            loadQuestion();
-        } else {
-            showResult();
-        }
+        // シートが下がるアニメーションを待つ
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuizSet.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }, 300);
     });
 
+    // 結果画面表示
     function showResult() {
         document.getElementById('progress-fill').style.width = '100%';
         document.getElementById('score-text').innerText = `${score} / ${currentQuizSet.length} 問 正解`;
@@ -157,10 +191,12 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('result');
     }
 
+    // 結果画面からホームへ戻る
     document.getElementById('home-btn').addEventListener('click', () => {
         showScreen('home');
     });
 
+    // 連続記録（ストリーク）の管理
     function updateStreakDisplay() {
         const streak = localStorage.getItem('streak') || 0;
         document.getElementById('streak-count').innerText = `${streak}日連続`;
