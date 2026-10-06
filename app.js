@@ -1,60 +1,95 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let questions = [];
+    let allQuestions = [];
+    let currentQuizSet = [];
     let currentQuestionIndex = 0;
     let score = 0;
     
-    // UI要素の取得
     const screens = {
         home: document.getElementById('home-screen'),
         quiz: document.getElementById('quiz-screen'),
         result: document.getElementById('result-screen')
     };
-    
-    // データ読み込みと初期化
+
+    // 問題データの読み込み
     fetch('questions.json')
         .then(response => response.json())
         .then(data => {
-            questions = data;
+            allQuestions = data;
+            setupCategoryButtons();
         });
 
-    updateStreak();
+    updateStreakDisplay();
 
-    // 画面遷移関数
     function showScreen(screenName) {
         Object.values(screens).forEach(s => s.classList.remove('active'));
         screens[screenName].classList.add('active');
     }
 
-    // スタートボタン
-    document.getElementById('start-btn').addEventListener('click', () => {
+    // 各ボタンのクリックイベントを設定
+    function setupCategoryButtons() {
+        const homeCard = document.querySelector('#home-screen .card');
+        
+        // カテゴリ別ボタンをホーム画面に動的生成
+        homeCard.innerHTML = `
+            <h3>5分間道場（5問ランダム）</h3>
+            <p>学習したいコースを選んでください</p>
+            <button class="btn-primary mode-btn" data-category="ALL" style="margin-bottom:8px;">🎲 全分野からランダム（5問）</button>
+            <button class="btn-secondary mode-btn" data-category="ストラテジ系" style="margin-bottom:8px;">📊 ストラテジ系（5問）</button>
+            <button class="btn-secondary mode-btn" data-category="マネジメント系" style="margin-bottom:8px;">👥 マネジメント系（5問）</button>
+            <button class="btn-secondary mode-btn" data-category="テクノロジ系" style="margin-bottom:8px;">💻 テクノロジ系（5問）</button>
+        `;
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const category = e.target.getAttribute('data-category');
+                startQuiz(category);
+            });
+        });
+    }
+
+    // 5問をランダム抽出してクイズを開始
+    function startQuiz(category) {
+        let pool = [];
+        if (category === 'ALL') {
+            pool = [...allQuestions];
+        } else {
+            pool = allQuestions.filter(q => q.category === category);
+        }
+
+        // Fisher-Yates シャッフルで完全ランダム化
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        // 5問だけを抽出（5問未満の場合はプール全体）
+        currentQuizSet = pool.slice(0, 5);
         currentQuestionIndex = 0;
         score = 0;
-        // 本来はランダムシャッフルしますが、MVPとしてそのまま出題します
+
         loadQuestion();
         showScreen('quiz');
-    });
+    }
 
-    // 問題の読み込み
     function loadQuestion() {
-        const q = questions[currentQuestionIndex];
-        document.getElementById('question-text').innerText = q.question;
+        const q = currentQuizSet[currentQuestionIndex];
+        document.getElementById('question-text').innerText = `【問${q.id}】\n` + q.question;
         document.getElementById('category-label').innerText = q.category;
-        document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1} / ${questions.length}`;
-        document.getElementById('progress-fill').style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+        document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1} / ${currentQuizSet.length}`;
+        document.getElementById('progress-fill').style.width = `${((currentQuestionIndex) / currentQuizSet.length) * 100}%`;
 
         const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = ''; // 選択肢をクリア
+        optionsContainer.innerHTML = '';
 
-        q.options.forEach((optionText, index) => {
+        q.options.forEach((optText, index) => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
-            btn.innerText = optionText;
+            btn.innerText = optText;
             btn.onclick = () => checkAnswer(index, q.answer, q.explanation);
             optionsContainer.appendChild(btn);
         });
     }
 
-    // 正誤判定と解説表示
     function checkAnswer(selectedIndex, correctIndex, explanation) {
         const sheet = document.getElementById('explanation-sheet');
         const overlay = document.getElementById('overlay');
@@ -75,43 +110,38 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.classList.add('show');
     }
 
-    // 次の問題へ
     document.getElementById('next-btn').addEventListener('click', () => {
         document.getElementById('explanation-sheet').classList.remove('show');
         document.getElementById('overlay').classList.remove('show');
         
         currentQuestionIndex++;
-        if (currentQuestionIndex < questions.length) {
+        if (currentQuestionIndex < currentQuizSet.length) {
             loadQuestion();
         } else {
             showResult();
         }
     });
 
-    // 結果画面
     function showResult() {
         document.getElementById('progress-fill').style.width = '100%';
-        document.getElementById('score-text').innerText = `${score} / ${questions.length} 問 正解`;
+        document.getElementById('score-text').innerText = `${score} / ${currentQuizSet.length} 問 正解`;
         incrementStreak();
         showScreen('result');
     }
 
-    // ホームへ戻る
     document.getElementById('home-btn').addEventListener('click', () => {
         showScreen('home');
     });
 
-    // ストリーク（連続記録）の管理（LocalStorage利用）
-    function updateStreak() {
+    function updateStreakDisplay() {
         const streak = localStorage.getItem('streak') || 0;
         document.getElementById('streak-count').innerText = `${streak}日連続`;
     }
 
     function incrementStreak() {
         let streak = parseInt(localStorage.getItem('streak') || '0');
-        // MVP用：1セットクリアするごとに単純にストリークを増やします
-        streak++; 
+        streak++;
         localStorage.setItem('streak', streak);
-        updateStreak();
+        updateStreakDisplay();
     }
 });
