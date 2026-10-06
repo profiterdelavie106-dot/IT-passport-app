@@ -1,153 +1,40 @@
-:root {
-    --primary: #6200ea;
-    --primary-light: #b085f5;
-    --background: #f5f5f5;
-    --surface: #ffffff;
-    --on-surface: #1d1d1d;
-    --success: #4caf50;
-    --error: #f44336;
-}
-
-body {
-    margin: 0;
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--background);
-    color: var(--on-surface);
-    display: flex;
-    justify-content: center;
-}
-
-#app-container {
-    width: 100%;
-    max-width: 480px; /* スマホサイズに固定 */
-    min-height: 100vh;
-    background-color: var(--background);
-    position: relative;
-    overflow: hidden;
-}
-
-.screen {
-    display: none;
-    padding: 16px;
-}
-
-.screen.active {
-    display: block;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 0;
-}
-
-.header h2 { margin: 0; font-size: 20px; }
-
-.stats {
-    display: flex;
-    align-items: center;
-    color: #ff9800;
-    font-weight: bold;
-}
-
-.card {
-    background: var(--surface);
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-bottom: 16px;
-    text-align: center;
-}
-
-.question-card {
-    text-align: left;
-    font-size: 16px;
-    line-height: 1.5;
-}
-
-.btn-primary, .btn-secondary, .option-btn {
-    width: 100%;
-    padding: 14px;
+/* 用語集用のスタイル追加 */
+.icon-btn {
+    background: none;
     border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 500;
+    color: var(--on-surface);
     cursor: pointer;
-    transition: background-color 0.2s;
-    margin-bottom: 12px;
-}
-
-.btn-primary {
-    background-color: var(--primary);
-    color: white;
-    box-shadow: 0 2px 4px rgba(98, 0, 234, 0.4);
-}
-
-.btn-secondary {
-    background-color: #e0e0e0;
-    color: var(--on-surface);
-}
-
-.option-btn {
-    background-color: var(--surface);
-    color: var(--on-surface);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    text-align: left;
-}
-
-.chip {
-    background-color: var(--primary-light);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-}
-
-.header-quiz {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 16px;
+    align-items: center;
+    padding: 4px;
+    margin-right: 8px;
 }
 
-.progress-bar {
-    width: 100%;
-    height: 4px;
-    background-color: #e0e0e0;
-    margin-bottom: 16px;
+.dictionary-list {
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+    padding-bottom: 24px;
 }
 
-#progress-fill {
-    height: 100%;
-    background-color: var(--primary);
-    width: 0%;
-    transition: width 0.3s;
-}
-
-/* ボトムシート（解説用） */
-.bottom-sheet {
-    position: absolute;
-    bottom: -100%;
-    left: 0;
-    width: 100%;
+.dict-item {
     background: var(--surface);
-    border-radius: 16px 16px 0 0;
-    padding: 24px;
-    box-sizing: border-box;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 100;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-align: left;
+    border-left: 4px solid var(--primary-light);
 }
 
-.bottom-sheet.show { bottom: 0; }
-#overlay.show { display: block; }
-#overlay {
-    display: none;
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.4);
-    z-index: 50;
+.dict-item h4 {
+    margin: 0 0 8px 0;
+    color: var(--primary);
+    font-size: 16px;
 }
-.correct { color: var(--success); }
-.incorrect { color: var(--error); }
-.result-icon { font-size: 64px; color: #ffeb3b; }
+
+.dict-item p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #424242;
+}
