@@ -27,14 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateStreakDisplay();
 
-    // 画面切り替え関数
     function showScreen(screenName) {
         Object.values(screens).forEach(s => s.classList.remove('active'));
         screens[screenName].classList.add('active');
-        window.scrollTo(0, 0); // 画面遷移時に上へスクロール
+        window.scrollTo(0, 0);
     }
 
-    // メニューボタンの生成
     function setupCategoryButtons() {
         const container = document.getElementById('course-buttons-container');
         
@@ -59,7 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
         `;
 
-        // クイズ開始イベント
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const target = e.currentTarget;
@@ -69,13 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // 用語集を開くイベント
         document.getElementById('open-dict-btn').addEventListener('click', () => {
             showScreen('dict');
         });
     }
 
-   // 用語集のレンダリング
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         list.innerHTML = '';
@@ -93,19 +88,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 用語集からホームへ戻るイベント
     document.getElementById('close-dict-btn').addEventListener('click', () => {
         showScreen('home');
     });
 
-    // クイズの途中で退出するイベント
     document.getElementById('exit-quiz-btn').addEventListener('click', () => {
         if (confirm("クイズを終了してホームに戻りますか？\n（ここまでの正解は記録されません）")) {
             showScreen('home');
         }
     });
 
-    // クイズ開始処理
     function startQuiz(category, limit) {
         let pool = [];
         if (category === 'ALL') {
@@ -114,13 +106,11 @@ document.addEventListener("DOMContentLoaded", () => {
             pool = allQuestions.filter(q => q.category === category);
         }
 
-        // Fisher-Yates シャッフル
         for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]];
         }
 
-        // 指定された問題数（15問 or 5問）を抽出
         currentQuizSet = pool.slice(0, limit);
         currentQuestionIndex = 0;
         score = 0;
@@ -129,14 +119,12 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('quiz');
     }
 
-    // 問題の読み込みと表示
     function loadQuestion() {
         const q = currentQuizSet[currentQuestionIndex];
         document.getElementById('question-text').innerText = `【問${q.id}】\n${q.question}`;
         document.getElementById('category-label').innerText = q.category;
         document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1}/${currentQuizSet.length}`;
         
-        // プログレスバーの更新
         const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 100;
         document.getElementById('progress-fill').style.width = `${progressPercent}%`;
 
@@ -152,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 正誤判定
+    // ★リッチな解説表示への改修部分★
     function checkAnswer(selectedIndex, correctIndex, explanation) {
         const sheet = document.getElementById('explanation-sheet');
         const overlay = document.getElementById('overlay');
@@ -168,17 +156,25 @@ document.addEventListener("DOMContentLoaded", () => {
             judgeText.className = "incorrect";
         }
         
-        expText.innerText = explanation;
+        // 正解の選択肢のテキストを取得
+        const correctOptionText = currentQuizSet[currentQuestionIndex].options[correctIndex];
+        
+        // 正解と解説を構造化して表示
+        expText.innerHTML = `
+            <div style="background: var(--md-primary-container); color: var(--md-on-primary-container); padding: 12px; border-radius: 8px; margin-bottom: 12px; font-weight: bold; font-size: 14px;">
+                💡 正解：${correctOptionText}
+            </div>
+            <div style="font-size: 15px; line-height: 1.6;">${explanation}</div>
+        `;
+        
         sheet.classList.add('show');
         overlay.classList.add('show');
     }
 
-    // 次の問題へ
     document.getElementById('next-btn').addEventListener('click', () => {
         document.getElementById('explanation-sheet').classList.remove('show');
         document.getElementById('overlay').classList.remove('show');
         
-        // シートが下がるアニメーションを待つ
         setTimeout(() => {
             currentQuestionIndex++;
             if (currentQuestionIndex < currentQuizSet.length) {
@@ -189,7 +185,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 300);
     });
 
-    // 結果画面表示
     function showResult() {
         document.getElementById('progress-fill').style.width = '100%';
         document.getElementById('score-text').innerText = `${score} / ${currentQuizSet.length} 問 正解`;
@@ -197,12 +192,10 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('result');
     }
 
-    // 結果画面からホームへ戻る
     document.getElementById('home-btn').addEventListener('click', () => {
         showScreen('home');
     });
 
-    // 連続記録（ストリーク）の管理
     function updateStreakDisplay() {
         const streak = localStorage.getItem('streak') || 0;
         document.getElementById('streak-count').innerText = `${streak}日連続`;
