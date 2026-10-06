@@ -15,14 +15,28 @@
             <div class="header">
                 <h2>ITパスポート 5分道場</h2>
                 <div class="stats">
+                    <button id="open-dict-btn" class="icon-btn" title="用語集を開く">
+                        <span class="material-icons">menu_book</span>
+                    </button>
                     <span class="material-icons">local_fire_department</span>
                     <span id="streak-count">0日連続</span>
                 </div>
             </div>
             <div class="card">
-                <h3>今日のミッション</h3>
-                <p>隙間時間の5分で知識を定着させよう</p>
-                <button id="start-btn" class="btn-primary">スタート</button>
+                <!-- JSで動的にボタンが生成されます -->
+            </div>
+        </section>
+
+        <!-- 用語集画面 -->
+        <section id="dictionary-screen" class="screen">
+            <div class="header">
+                <h2>用語集 (令和8年度)</h2>
+                <button id="close-dict-btn" class="icon-btn" title="閉じる">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div id="dictionary-list" class="dictionary-list">
+                <!-- JSで動的に用語が生成されます -->
             </div>
         </section>
 
@@ -36,11 +50,9 @@
                 <span id="question-count-label">1/5</span>
             </div>
             <div class="card question-card">
-                <p id="question-text">問題文がここに入ります</p>
+                <p id="question-text">問題文</p>
             </div>
-            <div id="options-container">
-                <!-- 選択肢がJavaScriptで生成されます -->
-            </div>
+            <div id="options-container"></div>
         </section>
 
         <!-- 結果画面 -->
