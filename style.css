@@ -254,42 +254,45 @@ body {
 #score-text { font-size: 24px; color: var(--md-primary); margin-bottom: 12px; }
 .result-message { color: var(--md-secondary); margin-bottom: 32px; font-size: 14px; }
 
-/* ボトムシート（解説表示） */
+/* ボトムシート（解説表示）の固定と隠蔽 */
 .bottom-sheet {
-    position: absolute;
-    bottom: -100%;
+    position: fixed;
+    bottom: 0;
     left: 0;
-    width: 100%;
-    background: var(--md-surface);
-    border-radius: 28px 28px 0 0;
+    right: 0;
+    margin: 0 auto;
+    max-width: 480px;
+    background: #ffffff; /* 環境に合わせてvar(--md-surface)等に変更可 */
+    border-radius: 24px 24px 0 0;
     padding: 24px;
-    box-sizing: border-box;
-    box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
-    transition: bottom 0.4s cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(100%); /* 画面下部に完全に隠す */
+    visibility: hidden; /* 非表示状態にする */
+    transition: transform 0.3s ease-out, visibility 0.3s;
     z-index: 100;
 }
 
-.bottom-sheet.show { bottom: 0; }
-
-.sheet-handle {
-    width: 32px;
-    height: 4px;
-    background-color: #CAC4D0;
-    border-radius: 2px;
-    margin: 0 auto 24px auto;
+.bottom-sheet.show {
+    transform: translateY(0);
+    visibility: visible;
 }
 
-#judgement-text { margin: 0 0 12px 0; font-size: 20px; }
-.correct { color: var(--md-success); }
-.incorrect { color: var(--md-error); }
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none; /* 非表示時はクリックを貫通させる */
+    transition: opacity 0.3s;
+    z-index: 90;
+}
 
-#explanation-text {
-    font-size: 15px;
-    line-height: 1.6;
-    color: var(--md-on-surface-variant);
-    margin-bottom: 24px;
-    max-height: 30vh;
-    overflow-y: auto;
+#overlay.show {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 /* モーダル用オーバーレイ */
