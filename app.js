@@ -41,7 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
         screens[screenName].classList.add('active');
         window.scrollTo(0, 0);
 
-        // クイズ中・用語集・結果画面ではボトムナビを隠す
         if (screenName === 'quiz' || screenName === 'dict' || screenName === 'result') {
             bottomNav.classList.add('hide');
         } else {
@@ -53,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // ボトムナビのタブ切り替えイベント
+    // ボトムナビ設定
     function setupNavigation() {
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -65,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // カレンダー前月・次月ボタン
         document.getElementById('prev-month-btn').addEventListener('click', () => {
             currentCalDate.setMonth(currentCalDate.getMonth() - 1);
             renderCalendar();
@@ -76,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // メニューボタンの生成
+    // メニューボタンの生成（復習ボタン追加）
     function setupCategoryButtons() {
         const container = document.getElementById('course-buttons-container');
         container.innerHTML = `
@@ -91,6 +89,10 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
             <button class="md-btn md-btn-secondary mode-btn" data-category="テクノロジ系" data-limit="5">
                 <span class="material-icons">computer</span> テクノロジ系（5問）
+            </button>
+            
+            <button class="md-btn mode-btn" data-category="REVIEW" data-limit="5" style="margin-top: 16px; background-color: #FFF3E0; color: #E65100;">
+                <span class="material-icons">assignment_late</span> 要復習の問題を解く
             </button>
             
             <div style="margin: 24px 0 12px 0; border-top: 1px solid var(--md-outline); opacity: 0.3;"></div>
@@ -114,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- ダッシュボード & カレンダー描画 ---
+    // ダッシュボード更新
     function updateDashboard() {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
@@ -143,7 +145,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('seen-count-text').innerText = `${seenTotal} / ${allQuestions.length}問`;
         document.getElementById('dashboard-progress-fill').style.width = `${progressPercent}%`;
 
-        // 分野別（全100問の内訳：ストラテジ34, マネジメント20, テクノロジ46）
         document.getElementById('strat-stat').innerText = `${stratSeen}/34問`;
         document.getElementById('strat-bar').style.width = `${Math.round((stratSeen / 34) * 100)}%`;
         document.getElementById('mgmt-stat').innerText = `${mgmtSeen}/20問`;
@@ -167,14 +168,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
         const todayStr = new Date().toISOString().split('T')[0];
 
-        // 1日より前の空きマス
         for (let i = 0; i < firstDay; i++) {
             const blank = document.createElement('div');
             blank.className = 'cal-day empty';
             grid.appendChild(blank);
         }
 
-        // 各日付
         for (let d = 1; d <= lastDate; d++) {
             const cell = document.createElement('div');
             cell.className = 'cal-day';
@@ -184,7 +183,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             cell.innerHTML = `<span>${d}</span>`;
 
-            // その日に解いた回数があればスタンプ表示
             const count = studyLog[dateStr] || 0;
             if (count > 0) {
                 cell.innerHTML += `
@@ -228,15 +226,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // クイズ開始
+    // ★クイズ開始（未出題優先・復習モード対応）★
     function startQuiz(category, limit) {
+        const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
+        const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
         let pool = [];
-        if (category === 'ALL') {
-            pool = [...allQuestions];
+
+        if (category === 'REVIEW') {
+            pool = allQuestions.filter(q => wrongQuestionIds.includes(q.id));
+            if (pool.length === 0) {
+                alert("現在、復習が必要な問題はありません！素晴らしいです。");
+                return;
+            }
         } else {
-            pool = allQuestions.filter(q => q.category === category);
+            let basePool = category === 'ALL' ? [...allQuestions] : allQuestions.filter(q => q.category === category);
+            
+            // 未出題と既出題に分ける
+            let unseenPool = basePool.filter(q => !progressData[q.id] || !progressData[q.id].seen);
+            let seenPool = basePool.filter(q => progressData[q.id] && progressData[q.id].seen);
+
+            // それぞれシャッフル
+            unseenPool.sort(() => Math.random() - 0.5);
+            seenPool.sort(() => Math.random() - 0.5);
+
+            // 未出題を優先して結合
+            pool = [...unseenPool, ...seenPool];
         }
 
+        // さらに全体をシャッフル（復習モード用など）
         for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -249,10 +266,20 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('quiz');
     }
 
+    // ★問題表示（前回間違えた問題バッジ対応）★
     function loadQuestion() {
         const q = currentQuizSet[currentQuestionIndex];
+        const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
+        const isWrongBefore = wrongQuestionIds.includes(q.id);
+
         document.getElementById('question-text').innerText = `【問${q.id}】\n${q.question}`;
-        document.getElementById('category-label').innerText = q.category;
+        
+        let chipHtml = `<span class="chip">${q.category}</span>`;
+        if (isWrongBefore) {
+            chipHtml += `<span class="chip" style="background-color: #FFEBEE; color: #C62828; margin-left: 8px;">⚠️ 前回間違えた問題</span>`;
+        }
+        document.querySelector('.chip-container').innerHTML = chipHtml;
+
         document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1}/${currentQuizSet.length}`;
         
         const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 100;
@@ -279,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const isCorrect = (selectedIndex === correctIndex);
 
-        // 進捗ログを記録
+        // ★進捗と復習リストの更新★
         recordQuestionResult(q.id, isCorrect);
 
         if (isCorrect) {
@@ -302,7 +329,6 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.classList.add('show');
     }
 
-    // 学習履歴・復習リストの更新ロジック
     function recordQuestionResult(qId, isCorrect) {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         let wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
@@ -319,6 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 wrongQuestionIds.push(qId);
             }
         } else {
+            // 正解したら復習リストから削除
             wrongQuestionIds = wrongQuestionIds.filter(id => id !== qId);
         }
         localStorage.setItem('wrongQuestionIds', JSON.stringify(wrongQuestionIds));
@@ -346,9 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('result');
     }
 
-    // 学習セッション回数を当日のログに加算
     function recordStudySession() {
-        // JST基準で日付を取得
         const now = new Date();
         const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
         const todayStr = jstNow.toISOString().split('T')[0];
