@@ -492,3 +492,37 @@ body {
     font-weight: 700;
     color: #E65100;
 }
+
+/* 前回間違えた問題の警告バナー */
+.wrong-alert-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #FFEBEE;
+    color: #C62828;
+    border: 1px solid #FFCDD2;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.wrong-alert-banner.hidden {
+    display: none;
+}
+
+.wrong-alert-banner .material-icons {
+    font-size: 18px;
+}
+
+/* 要復習ボタン用のアクセントカラー */
+.md-btn-warning {
+    background-color: #FFF3E0;
+    color: #E65100;
+    border: 1px solid #FFE0B2;
+}
+
+.md-btn-warning:active {
+    background-color: #FFE0B2;
+}
