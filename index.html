@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ITパスポート試験対策（試作）</title>
+    <title>ITパスポート 5分道場</title>
     <!-- Google Fonts & Material Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -11,10 +11,10 @@
 </head>
 <body>
     <div id="app-container">
-        <!-- ホーム画面 -->
+        <!-- 1. 学習メイン画面 -->
         <section id="home-screen" class="screen active">
             <div class="header">
-                <h2>ITパスポート試験対策（試作）</h2>
+                <h2>ITパスポート道場</h2>
                 <div class="stats">
                     <span class="material-icons fire-icon">local_fire_department</span>
                     <span id="streak-count" class="streak-text">0日連続</span>
@@ -24,31 +24,89 @@
             <div class="card main-card">
                 <h3 class="card-title">学習コースを選択</h3>
                 <p class="card-subtitle">隙間時間で知識を定着させましょう</p>
-                
-                <!-- JSで動的にボタンが生成されます -->
                 <div id="course-buttons-container"></div>
             </div>
         </section>
 
-        <!-- 用語集画面 -->
+        <!-- 2. 進捗・カレンダー画面（新設） -->
+        <section id="dashboard-screen" class="screen">
+            <div class="header">
+                <h2>学習記録・進捗</h2>
+            </div>
+
+            <!-- 進捗メーターカード -->
+            <div class="card dashboard-card">
+                <h3 class="card-title">全体進捗（全100問）</h3>
+                <div class="stats-overview">
+                    <div class="stat-box">
+                        <span class="stat-num" id="progress-rate">0%</span>
+                        <span class="stat-label">消化率</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="accuracy-rate">0%</span>
+                        <span class="stat-label">正答率</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="wrong-count">0問</span>
+                        <span class="stat-label">要復習</span>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div class="bar-label"><span>学習済み</span><span id="seen-count-text">0 / 100問</span></div>
+                    <div class="progress-bar"><div id="dashboard-progress-fill"></div></div>
+                </div>
+
+                <!-- 分野別プログレス -->
+                <div class="category-progress-list">
+                    <div class="cat-progress-item">
+                        <div class="cat-label-row"><span>ストラテジ系</span><span id="strat-stat">0/34問</span></div>
+                        <div class="sub-progress-bar"><div id="strat-bar" style="width: 0%;"></div></div>
+                    </div>
+                    <div class="cat-progress-item">
+                        <div class="cat-label-row"><span>マネジメント系</span><span id="mgmt-stat">0/20問</span></div>
+                        <div class="sub-progress-bar"><div id="mgmt-bar" style="width: 0%;"></div></div>
+                    </div>
+                    <div class="cat-progress-item">
+                        <div class="cat-label-row"><span>テクノロジ系</span><span id="tech-stat">0/46問</span></div>
+                        <div class="sub-progress-bar"><div id="tech-bar" style="width: 0%;"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- カレンダーカード -->
+            <div class="card dashboard-card">
+                <div class="calendar-header">
+                    <button id="prev-month-btn" class="icon-btn"><span class="material-icons">chevron_left</span></button>
+                    <h3 id="calendar-month-title">2026年10月</h3>
+                    <button id="next-month-btn" class="icon-btn"><span class="material-icons">chevron_right</span></button>
+                </div>
+                <div class="calendar-weekdays">
+                    <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+                </div>
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- JSで日付とスタンプを動的生成 -->
+                </div>
+            </div>
+            <!-- 下部ナビ分の余白 -->
+            <div style="height: 60px;"></div>
+        </section>
+
+        <!-- 3. 用語集画面 -->
         <section id="dictionary-screen" class="screen">
             <div class="header">
-                <!-- 戻るボタン -->
                 <button id="close-dict-btn" class="icon-btn" title="ホームに戻る">
                     <span class="material-icons">arrow_back</span>
                 </button>
                 <h2>用語集 (令和8年度)</h2>
-                <div style="width: 40px;"></div> <!-- レイアウト調整用余白 -->
+                <div style="width: 40px;"></div>
             </div>
-            <div id="dictionary-list" class="dictionary-list">
-                <!-- JSで動的に用語が生成されます -->
-            </div>
+            <div id="dictionary-list" class="dictionary-list"></div>
         </section>
 
-        <!-- 問題画面 -->
+        <!-- 4. 問題画面 -->
         <section id="quiz-screen" class="screen">
             <div class="header-quiz">
-                <!-- 途中で退出するボタン -->
                 <button id="exit-quiz-btn" class="icon-btn exit-btn" title="途中で退出する">
                     <span class="material-icons">close</span>
                 </button>
@@ -67,12 +125,10 @@
             <div class="card question-card">
                 <p id="question-text">問題文</p>
             </div>
-            <div id="options-container">
-                <!-- 選択肢が生成されます -->
-            </div>
+            <div id="options-container"></div>
         </section>
 
-        <!-- 結果画面 -->
+        <!-- 5. 結果画面 -->
         <section id="result-screen" class="screen">
             <div class="header">
                 <h2>学習完了！</h2>
@@ -87,18 +143,27 @@
             </div>
         </section>
 
-        <!-- 解説ボトムシート -->
+        <!-- ボトムシート（解説表示） -->
         <div id="explanation-sheet" class="bottom-sheet hidden">
             <div class="sheet-handle"></div>
             <h3 id="judgement-text">正解！</h3>
             <p id="explanation-text">解説文</p>
             <button id="next-btn" class="md-btn md-btn-primary">次の問題へ</button>
         </div>
-        
-        <!-- モーダル用オーバーレイ -->
         <div id="overlay" class="hidden"></div>
+
+        <!-- ボトムナビゲーションバー（画面最下部の固定タブ） -->
+        <nav id="bottom-nav" class="bottom-nav">
+            <button class="nav-tab active" data-target="home-screen">
+                <span class="material-icons">school</span>
+                <span>学習</span>
+            </button>
+            <button class="nav-tab" data-target="dashboard-screen">
+                <span class="material-icons">insights</span>
+                <span>進捗・記録</span>
+            </button>
+        </nav>
     </div>
-    
     <script src="app.js"></script>
 </body>
 </html>
