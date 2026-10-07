@@ -352,6 +352,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.getElementById('next-btn').addEventListener('click', () => {
+        // 出題データがない場合の誤作動を完全に防止
+        if (currentQuizSet.length === 0) return; 
+
         document.getElementById('explanation-sheet').classList.remove('show');
         document.getElementById('overlay').classList.remove('show');
         
