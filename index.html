@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ITパスポート 5分道場</title>
+    <title>ITパスポート試験対策（試作）</title>
     <!-- Google Fonts & Material Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -14,7 +14,7 @@
         <!-- 1. 学習メイン画面 -->
         <section id="home-screen" class="screen active">
             <div class="header">
-                <h2>ITパスポート道場</h2>
+                <h2>ITパスポート試験対策（試作）</h2>
                 <div class="stats">
                     <span class="material-icons fire-icon">local_fire_department</span>
                     <span id="streak-count" class="streak-text">0日連続</span>
@@ -26,9 +26,10 @@
                 <p class="card-subtitle">隙間時間で知識を定着させましょう</p>
                 <div id="course-buttons-container"></div>
             </div>
+            <div style="height: 60px;"></div>
         </section>
 
-        <!-- 2. 進捗・カレンダー画面（新設） -->
+        <!-- 2. 進捗・カレンダー画面 -->
         <section id="dashboard-screen" class="screen">
             <div class="header">
                 <h2>学習記録・進捗</h2>
@@ -84,11 +85,8 @@
                 <div class="calendar-weekdays">
                     <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
                 </div>
-                <div id="calendar-grid" class="calendar-grid">
-                    <!-- JSで日付とスタンプを動的生成 -->
-                </div>
+                <div id="calendar-grid" class="calendar-grid"></div>
             </div>
-            <!-- 下部ナビ分の余白 -->
             <div style="height: 60px;"></div>
         </section>
 
@@ -116,6 +114,11 @@
                     </div>
                     <span id="question-count-label">1/5</span>
                 </div>
+            </div>
+
+            <!-- 前回間違えた問題バナー（動的に表示/非表示） -->
+            <div id="wrong-alert-banner" class="wrong-alert-banner hidden">
+                <span class="material-icons">warning</span> 前回間違えた問題です！
             </div>
 
             <div class="chip-container">
@@ -152,7 +155,7 @@
         </div>
         <div id="overlay" class="hidden"></div>
 
-        <!-- ボトムナビゲーションバー（画面最下部の固定タブ） -->
+        <!-- ボトムナビゲーションバー -->
         <nav id="bottom-nav" class="bottom-nav">
             <button class="nav-tab active" data-target="home-screen">
                 <span class="material-icons">school</span>
