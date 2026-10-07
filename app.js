@@ -391,14 +391,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function updateStreakDisplay() {
-        const streak = localStorage.getItem('streak') || 0;
-        document.getElementById('streak-count').innerText = `${streak}日連続`;
+        const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
+        let totalCount = 0;
+        
+        // 記録されている全ての日付の学習回数を合算する
+        for (let date in studyLog) {
+            totalCount += studyLog[date];
+        }
+        
+        document.getElementById('streak-count').innerText = `累計 ${totalCount}回`;
     }
-
-    function incrementStreak() {
-        let streak = parseInt(localStorage.getItem('streak') || '0');
-        streak++;
-        localStorage.setItem('streak', streak);
-        updateStreakDisplay();
-    }
-});
