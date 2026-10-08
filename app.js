@@ -224,8 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function renderDictionary() {
-        // 用語集（A〜Z、あ〜ん順の見出し表示、レベル表記なし）
+    // 用語集（A〜Z、あ〜ん順の見出し表示、レベル表記なし）
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         if (!list) return;
@@ -262,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     div.innerHTML = `<h4>${termName}</h4>${yomiHtml}<p class="desc">${descText}</p>`;
                     list.appendChild(div);
                 });
-             }
+            }
         });
     }
 
