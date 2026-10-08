@@ -529,3 +529,53 @@ body {
 .md-btn-warning:active {
     background-color: #FFE0B2;
 }
+
+/* ポップアップ（モーダル） */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.modal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: var(--md-surface);
+    padding: 24px;
+    width: 85%;
+    max-width: 400px;
+    border-radius: 16px;
+    text-align: left;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+    margin-top: 0;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.modal-body {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--md-on-surface);
+    margin-bottom: 24px;
+}
+
+/* 問題画面の小さな出典 */
+.credit-text-small {
+    font-size: 10px;
+    color: var(--md-secondary);
+    text-align: right;
+    margin-top: 16px;
+}
