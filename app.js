@@ -4,8 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let dictionary = [];
     let currentQuestionIndex = 0;
     let score = 0;
-    
-    // カレンダー表示用年月
+
     let currentCalDate = new Date();
 
     const screens = {
@@ -18,7 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const bottomNav = document.getElementById('bottom-nav');
 
-    // データ読み込み
     Promise.all([
         fetch('questions.json').then(res => res.json()),
         fetch('dictionary.json').then(res => res.json())
@@ -35,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateStreakDisplay();
 
-    // 画面切り替え関数
     function showScreen(screenName) {
         Object.values(screens).forEach(s => s.classList.remove('active'));
         screens[screenName].classList.add('active');
@@ -52,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // ボトムナビ設定
     function setupNavigation() {
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -74,11 +70,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // メニューボタンの生成（復習ボタン・出典リンク追加）
     function setupCategoryButtons() {
         const container = document.getElementById('course-buttons-container');
         container.innerHTML = `
-            <!-- 年度選択ドロップダウン -->
             <div style="margin-bottom: 20px; text-align: left;">
                 <label for="year-select" style="font-size: 13px; color: var(--md-secondary); font-weight: bold; display: block; margin-bottom: 8px;">出題年度の絞り込み</label>
                 <select id="year-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--md-outline); font-family: inherit; font-size: 15px; background-color: var(--md-surface); outline: none;">
@@ -89,7 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </select>
             </div>
 
-            <!-- 既存の学習ボタン -->
             <button class="md-btn md-btn-primary mode-btn" data-category="ALL" data-limit="15">
                 <span class="material-icons">casino</span> 全分野からランダム（15問）
             </button>
@@ -113,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="material-icons">menu_book</span> 過去問用語集を開く
             </button>
 
-            <!-- 出典リンク -->
             <div style="text-align: center; margin-top: 24px;">
                 <button id="open-credit-btn" style="background: none; border: none; color: var(--md-secondary); font-size: 12px; text-decoration: underline; cursor: pointer;">
                     出典・利用について
@@ -135,36 +127,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const creditModal = document.getElementById('credit-modal');
-        document.getElementById('open-credit-btn').addEventListener('click', () => {
-            creditModal.classList.add('show');
-        });
-        document.getElementById('close-credit-btn').addEventListener('click', () => {
-            creditModal.classList.remove('show');
-        });
-        creditModal.addEventListener('click', (e) => {
-            if (e.target === creditModal) {
+        if (creditModal) {
+            document.getElementById('open-credit-btn').addEventListener('click', () => {
+                creditModal.classList.add('show');
+            });
+            document.getElementById('close-credit-btn').addEventListener('click', () => {
                 creditModal.classList.remove('show');
-            }
-        });
+            });
+            creditModal.addEventListener('click', (e) => {
+                if (e.target === creditModal) {
+                    creditModal.classList.remove('show');
+                }
+            });
+        }
     }
 
-        // モーダルの開閉イベント
-        const creditModal = document.getElementById('credit-modal');
-        document.getElementById('open-credit-btn').addEventListener('click', () => {
-            creditModal.classList.add('show');
-        });
-        document.getElementById('close-credit-btn').addEventListener('click', () => {
-            creditModal.classList.remove('show');
-        });
-        // 黒い背景部分をタップしても閉じるようにする
-        creditModal.addEventListener('click', (e) => {
-            if (e.target === creditModal) {
-                creditModal.classList.remove('show');
-            }
-        });
-    }
-
-    // ダッシュボード更新
     function updateDashboard() {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
@@ -184,21 +161,27 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        const progressPercent = Math.round((seenTotal / (allQuestions.length || 100)) * 100);
+        const totalQuestions = allQuestions.length || 100;
+        const progressPercent = Math.round((seenTotal / totalQuestions) * 100);
         const accuracyPercent = seenTotal > 0 ? Math.round((correctTotal / seenTotal) * 100) : 0;
 
         document.getElementById('progress-rate').innerText = `${progressPercent}%`;
         document.getElementById('accuracy-rate').innerText = `${accuracyPercent}%`;
         document.getElementById('wrong-count').innerText = `${wrongQuestionIds.length}問`;
-        document.getElementById('seen-count-text').innerText = `${seenTotal} / ${allQuestions.length}問`;
+        document.getElementById('seen-count-text').innerText = `${seenTotal} / ${totalQuestions}問`;
         document.getElementById('dashboard-progress-fill').style.width = `${progressPercent}%`;
 
-        document.getElementById('strat-stat').innerText = `${stratSeen}/34問`;
-        document.getElementById('strat-bar').style.width = `${Math.round((stratSeen / 34) * 100)}%`;
-        document.getElementById('mgmt-stat').innerText = `${mgmtSeen}/20問`;
-        document.getElementById('mgmt-bar').style.width = `${Math.round((mgmtSeen / 20) * 100)}%`;
-        document.getElementById('tech-stat').innerText = `${techSeen}/46問`;
-        document.getElementById('tech-bar').style.width = `${Math.round((techSeen / 46) * 100)}%`;
+        // 分野別（母数は全問題の割合で自動計算）
+        const stratTotal = allQuestions.filter(q => q.category === 'ストラテジ系').length || 34;
+        const mgmtTotal = allQuestions.filter(q => q.category === 'マネジメント系').length || 20;
+        const techTotal = allQuestions.filter(q => q.category === 'テクノロジ系').length || 46;
+
+        document.getElementById('strat-stat').innerText = `${stratSeen}/${stratTotal}問`;
+        document.getElementById('strat-bar').style.width = `${Math.round((stratSeen / stratTotal) * 100)}%`;
+        document.getElementById('mgmt-stat').innerText = `${mgmtSeen}/${mgmtTotal}問`;
+        document.getElementById('mgmt-bar').style.width = `${Math.round((mgmtSeen / mgmtTotal) * 100)}%`;
+        document.getElementById('tech-stat').innerText = `${techSeen}/${techTotal}問`;
+        document.getElementById('tech-bar').style.width = `${Math.round((techSeen / techTotal) * 100)}%`;
 
         renderCalendar();
     }
@@ -242,7 +225,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 用語集
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         if (!list) return;
@@ -274,15 +256,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ★クイズ開始（未出題優先・復習モード対応）★
     function startQuiz(category, limit) {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
         
-        // ★ 選択された年度を取得
-        const selectedYear = document.getElementById('year-select').value;
+        const yearSelectEl = document.getElementById('year-select');
+        const selectedYear = yearSelectEl ? yearSelectEl.value : 'ALL';
         
-        // ★ 年度で絞り込み
         let filteredQuestions = allQuestions;
         if (selectedYear !== 'ALL') {
             filteredQuestions = allQuestions.filter(q => q.year === selectedYear);
@@ -321,7 +301,6 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('quiz');
     }
 
-    // 問題表示（前回間違えた問題バッジ・年度バッジ対応）
     function loadQuestion() {
         const q = currentQuizSet[currentQuestionIndex];
         const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
@@ -339,127 +318,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1}/${currentQuizSet.length}`;
         
-        const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 100;
-        document.getElementById('progress-fill').style.width = `${progressPercent}%`;
-
-        const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = '';
-
-        q.options.forEach((optText, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-            btn.innerText = optText;
-            btn.onclick = () => checkAnswer(index, q.answer, q.explanation);
-            optionsContainer.appendChild(btn);
-        });
-    }
-
-    function checkAnswer(selectedIndex, correctIndex, explanation) {
-        const sheet = document.getElementById('explanation-sheet');
-        const overlay = document.getElementById('overlay');
-        const judgeText = document.getElementById('judgement-text');
-        const expText = document.getElementById('explanation-text');
-        const q = currentQuizSet[currentQuestionIndex];
-
-        const isCorrect = (selectedIndex === correctIndex);
-
-        // 進捗と復習リストの更新
-        recordQuestionResult(q.id, isCorrect);
-
-        if (isCorrect) {
-            judgeText.innerText = "正解！ 🎉";
-            judgeText.className = "correct";
-            score++;
-        } else {
-            judgeText.innerText = "不正解... 😢";
-            judgeText.className = "incorrect";
-        }
-        
-        const correctOptionText = q.options[correctIndex];
-        expText.innerHTML = `
-            <div style="background: var(--md-primary-container); color: var(--md-on-primary-container); padding: 12px; border-radius: 8px; margin-bottom: 12px; font-weight: bold; font-size: 14px;">
-                💡 正解：${correctOptionText}
-            </div>
-            <div style="font-size: 15px; line-height: 1.6;">${explanation}</div>
-        `;
-        sheet.classList.add('show');
-        overlay.classList.add('show');
-    }
-
-    function recordQuestionResult(qId, isCorrect) {
-        const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
-        let wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
-
-        progressData[qId] = {
-            seen: true,
-            lastResult: isCorrect ? 'correct' : 'incorrect',
-            updatedAt: new Date().toISOString()
-        };
-        localStorage.setItem('progressData', JSON.stringify(progressData));
-
-        if (!isCorrect) {
-            if (!wrongQuestionIds.includes(qId)) {
-                wrongQuestionIds.push(qId);
-            }
-        } else {
-            // 正解したら復習リストから削除
-            wrongQuestionIds = wrongQuestionIds.filter(id => id !== qId);
-        }
-        localStorage.setItem('wrongQuestionIds', JSON.stringify(wrongQuestionIds));
-    }
-
-    // ★ 誤作動防止対応済み ★
-    document.getElementById('next-btn').addEventListener('click', () => {
-        // 出題データがない場合の誤作動を完全に防止
-        if (currentQuizSet.length === 0) return; 
-
-        document.getElementById('explanation-sheet').classList.remove('show');
-        document.getElementById('overlay').classList.remove('show');
-        
-        setTimeout(() => {
-            currentQuestionIndex++;
-            if (currentQuestionIndex < currentQuizSet.length) {
-                loadQuestion();
-            } else {
-                showResult();
-            }
-        }, 300);
-    });
-
-    function showResult() {
-        document.getElementById('progress-fill').style.width = '100%';
-        document.getElementById('score-text').innerText = `${score} / ${currentQuizSet.length} 問 正解`;
-        
-        recordStudySession();
-        updateStreakDisplay();
-        
-        showScreen('result');
-    }
-
-    function recordStudySession() {
-        const now = new Date();
-        const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-        const todayStr = jstNow.toISOString().split('T')[0];
-        
-        const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-        studyLog[todayStr] = (studyLog[todayStr] || 0) + 1;
-        localStorage.setItem('studyLog', JSON.stringify(studyLog));
-    }
-
-    document.getElementById('home-btn').addEventListener('click', () => {
-        showScreen('home');
-    });
-
-    // ★ 累計学習回数の表示 ★
-    function updateStreakDisplay() {
-        const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-        let totalCount = 0;
-        
-        // 記録されている全ての日付の学習回数を合算する
-        for (let date in studyLog) {
-            totalCount += studyLog[date];
-        }
-        
-        document.getElementById('streak-count').innerText = `累計 ${totalCount}回`;
-    }
-});
+        const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 10
