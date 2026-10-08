@@ -127,6 +127,7 @@
 
             <div class="card question-card">
                 <p id="question-text">問題文</p>
+                <div class="credit-text-small">出典：IPA ITパスポート試験公開問題</div>
             </div>
             <div id="options-container"></div>
         </section>
@@ -167,6 +168,21 @@
             </button>
         </nav>
     </div>
+    
+    <!-- 出典・利用について モーダル -->
+        <div id="credit-modal" class="modal">
+            <div class="modal-content card">
+                <h3 class="modal-title">問題の出典について</h3>
+                <p class="modal-body">
+                    本アプリでは、独立行政法人情報処理推進機構（IPA）が公開しているITパスポート試験の過去問題を使用しています。<br><br>
+                    出典：独立行政法人情報処理推進機構（IPA）<br>
+                    ITパスポート試験 過去問題（問題冊子・解答例）<br><br>
+                    本アプリはIPAが運営・提供する公式アプリではありません。<br><br>
+                    <small>※問題の著作権はIPAに帰属します。</small>
+                </p>
+                <button id="close-credit-btn" class="md-btn md-btn-primary">閉じる</button>
+            </div>
+        </div>
     <script src="app.js"></script>
 </body>
 </html>
