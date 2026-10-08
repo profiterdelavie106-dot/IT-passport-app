@@ -225,23 +225,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderDictionary() {
+        // 用語集（A〜Z、あ〜ん順の見出し表示、レベル表記なし）
+    function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         if (!list) return;
         list.innerHTML = '';
         
-        dictionary.forEach(item => {
-            const termName = item.term || item.name || item.word || '用語名なし';
-            const yomiText = item.yomi || item.reading || '';
-            const descText = item.description || item.desc || item.explanation || '解説はありません。';
-            
-            const div = document.createElement('div');
-            div.className = 'dict-item';
-            let yomiHtml = '';
-            if (yomiText && yomiText !== termName) {
-                yomiHtml = `<div class="yomi">（${yomiText}）</div>`;
-            }
-            div.innerHTML = `<h4>${termName}</h4>${yomiHtml}<p class="desc">${descText}</p>`;
-            list.appendChild(div);
+        // 表示したいインデックスの順番を定義
+        const indexOrder = ['A〜Z', 'あ行', 'か行', 'さ行', 'た行', 'な行', 'は行', 'ま行', 'や行', 'ら行', 'わ行'];
+
+        indexOrder.forEach(idx => {
+            // その行に該当する用語だけを抽出
+            const termsForIndex = dictionary.filter(item => item.index === idx);
+
+            if (termsForIndex.length > 0) {
+                // インデックスの見出し（帯）を作成
+                const header = document.createElement('div');
+                header.className = 'dict-index-header';
+                header.innerHTML = `<span class="material-icons" style="font-size: 18px; margin-right: 6px;">menu_book</span>${idx}`;
+                list.appendChild(header);
+
+                // その行の用語リストを作成
+                termsForIndex.forEach(item => {
+                    const termName = item.term || '用語名なし';
+                    const yomiText = item.yomi || '';
+                    const descText = item.description || '解説はありません。';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'dict-item';
+                    
+                    let yomiHtml = '';
+                    if (yomiText && yomiText !== termName) {
+                        yomiHtml = `<div class="yomi">（${yomiText}）</div>`;
+                    }
+                    
+                    div.innerHTML = `<h4>${termName}</h4>${yomiHtml}<p class="desc">${descText}</p>`;
+                    list.appendChild(div);
+                });
+             }
         });
     }
 
