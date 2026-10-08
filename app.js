@@ -4,12 +4,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let dictionary = [];
     let currentQuestionIndex = 0;
     let score = 0;
+    let selectedProgressYear = 'ALL';
 
     let currentCalDate = new Date();
 
     const screens = {
         home: document.getElementById('home-screen'),
-        dashboard: document.getElementById('dashboard-screen'),
+        progress: document.getElementById('progress-screen'),
+        record: document.getElementById('record-screen'),
         quiz: document.getElementById('quiz-screen'),
         result: document.getElementById('result-screen'),
         dict: document.getElementById('dictionary-screen')
@@ -26,7 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
         setupCategoryButtons();
         renderDictionary();
         setupNavigation();
-        updateDashboard();
+        updateProgressView();
+        setupShareButton();
     }).catch(err => {
         console.error("データの読み込みに失敗しました:", err);
     });
@@ -34,8 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
     updateStreakDisplay();
 
     function showScreen(screenName) {
-        Object.values(screens).forEach(s => s.classList.remove('active'));
-        screens[screenName].classList.add('active');
+        Object.values(screens).forEach(s => s && s.classList.remove('active'));
+        if (screens[screenName]) screens[screenName].classList.add('active');
         window.scrollTo(0, 0);
 
         if (screenName === 'quiz' || screenName === 'dict' || screenName === 'result') {
@@ -44,8 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
             bottomNav.classList.remove('hide');
         }
 
-        if (screenName === 'dashboard') {
-            updateDashboard();
+        if (screenName === 'progress') {
+            updateProgressView();
+        } else if (screenName === 'record') {
+            renderCalendar();
+            updateShareBanner();
         }
     }
 
@@ -57,6 +63,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 targetTab.classList.add('active');
                 const targetScreen = targetTab.getAttribute('data-target');
                 showScreen(targetScreen.replace('-screen', ''));
+            });
+        });
+
+        // 進捗の年度ピルボタン切り替え
+        document.querySelectorAll('#progress-year-tabs .pill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('#progress-year-tabs .pill-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                selectedProgressYear = e.currentTarget.getAttribute('data-year');
+                updateProgressView();
             });
         });
 
@@ -116,41 +132,38 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const target = e.currentTarget;
-                const category = target.getAttribute('data-category');
-                const limit = parseInt(target.getAttribute('data-limit'));
-                startQuiz(category, limit);
+                startQuiz(target.getAttribute('data-category'), parseInt(target.getAttribute('data-limit')));
             });
         });
 
-        document.getElementById('open-dict-btn').addEventListener('click', () => {
-            showScreen('dict');
-        });
+        document.getElementById('open-dict-btn').addEventListener('click', () => showScreen('dict'));
 
         const creditModal = document.getElementById('credit-modal');
         if (creditModal) {
-            document.getElementById('open-credit-btn').addEventListener('click', () => {
-                creditModal.classList.add('show');
-            });
-            document.getElementById('close-credit-btn').addEventListener('click', () => {
-                creditModal.classList.remove('show');
-            });
+            document.getElementById('open-credit-btn').addEventListener('click', () => creditModal.classList.add('show'));
+            document.getElementById('close-credit-btn').addEventListener('click', () => creditModal.classList.remove('show'));
             creditModal.addEventListener('click', (e) => {
-                if (e.target === creditModal) {
-                    creditModal.classList.remove('show');
-                }
+                if (e.target === creditModal) creditModal.classList.remove('show');
             });
         }
     }
 
-    function updateDashboard() {
+    // 全体 / 年度別の進捗計算ロジック
+    function updateProgressView() {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
-        
+
+        let questionsScope = allQuestions;
+        if (selectedProgressYear !== 'ALL') {
+            questionsScope = allQuestions.filter(q => q.year === selectedProgressYear);
+        }
+
+        const totalInScope = questionsScope.length || 1;
         let seenTotal = 0;
         let correctTotal = 0;
         let stratSeen = 0, mgmtSeen = 0, techSeen = 0;
 
-        allQuestions.forEach(q => {
+        questionsScope.forEach(q => {
             const stat = progressData[q.id];
             if (stat && stat.seen) {
                 seenTotal++;
@@ -161,19 +174,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        const totalQuestions = allQuestions.length || 100;
-        const progressPercent = Math.round((seenTotal / totalQuestions) * 100);
+        const scopeWrong = questionsScope.filter(q => wrongQuestionIds.includes(q.id)).length;
+        const progressPercent = Math.round((seenTotal / totalInScope) * 100);
         const accuracyPercent = seenTotal > 0 ? Math.round((correctTotal / seenTotal) * 100) : 0;
 
         document.getElementById('progress-rate').innerText = `${progressPercent}%`;
         document.getElementById('accuracy-rate').innerText = `${accuracyPercent}%`;
-        document.getElementById('wrong-count').innerText = `${wrongQuestionIds.length}問`;
-        document.getElementById('seen-count-text').innerText = `${seenTotal} / ${totalQuestions}問`;
+        document.getElementById('wrong-count').innerText = `${scopeWrong}問`;
+        document.getElementById('seen-count-text').innerText = `${seenTotal} / ${totalInScope}問`;
         document.getElementById('dashboard-progress-fill').style.width = `${progressPercent}%`;
 
-        const stratTotal = allQuestions.filter(q => q.category === 'ストラテジ系').length || 34;
-        const mgmtTotal = allQuestions.filter(q => q.category === 'マネジメント系').length || 20;
-        const techTotal = allQuestions.filter(q => q.category === 'テクノロジ系').length || 46;
+        document.getElementById('scope-total-title').innerText = selectedProgressYear === 'ALL' ? '総進捗' : `${selectedProgressYear}の進捗`;
+
+        const stratTotal = questionsScope.filter(q => q.category === 'ストラテジ系').length || 1;
+        const mgmtTotal = questionsScope.filter(q => q.category === 'マネジメント系').length || 1;
+        const techTotal = questionsScope.filter(q => q.category === 'テクノロジ系').length || 1;
 
         document.getElementById('strat-stat').innerText = `${stratSeen}/${stratTotal}問`;
         document.getElementById('strat-bar').style.width = `${Math.round((stratSeen / stratTotal) * 100)}%`;
@@ -181,8 +196,37 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('mgmt-bar').style.width = `${Math.round((mgmtSeen / mgmtTotal) * 100)}%`;
         document.getElementById('tech-stat').innerText = `${techSeen}/${techTotal}問`;
         document.getElementById('tech-bar').style.width = `${Math.round((techSeen / techTotal) * 100)}%`;
+    }
 
-        renderCalendar();
+    // Xシェアバナーの更新
+    function updateShareBanner() {
+        const todayStr = getTodayStr();
+        const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
+        const todayCount = studyLog[todayStr] || 0;
+        document.getElementById('today-study-text').innerText = `本日の学習: ${todayCount}セッション完了 🔥`;
+    }
+
+    // X投稿リンクの生成
+    function setupShareButton() {
+        document.getElementById('share-x-btn').addEventListener('click', () => {
+            const todayStr = getTodayStr();
+            const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
+            const todayCount = studyLog[todayStr] || 0;
+            const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
+            const seenCount = Object.keys(progressData).length;
+
+            const text = encodeURIComponent(
+                `【ITパスポート学習記録】\n本日${todayCount}セッション完了！\n累計消化数: ${seenCount}/300問\n毎日コツコツ一発合格目指して勉強中✍️🔥\n\n#ITパスポート #今日の積み上げ #資格勉強`
+            );
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+        });
+    }
+
+    function getTodayStr() {
+        const now = new Date();
+        const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+        return jstNow.toISOString().split('T')[0];
     }
 
     function renderCalendar() {
@@ -196,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const firstDay = new Date(year, month, 1).getDay();
         const lastDate = new Date(year, month + 1, 0).getDate();
         const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getTodayStr();
 
         for (let i = 0; i < firstDay; i++) {
             const blank = document.createElement('div');
@@ -224,27 +268,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 用語集（A〜Z、あ〜ん順の見出し表示、レベル表記なし）
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         if (!list) return;
         list.innerHTML = '';
         
-        // 表示したいインデックスの順番を定義
         const indexOrder = ['A〜Z', 'あ行', 'か行', 'さ行', 'た行', 'な行', 'は行', 'ま行', 'や行', 'ら行', 'わ行'];
 
         indexOrder.forEach(idx => {
-            // その行に該当する用語だけを抽出
             const termsForIndex = dictionary.filter(item => item.index === idx);
 
             if (termsForIndex.length > 0) {
-                // インデックスの見出し（帯）を作成
                 const header = document.createElement('div');
                 header.className = 'dict-index-header';
                 header.innerHTML = `<span class="material-icons" style="font-size: 18px; margin-right: 6px;">menu_book</span>${idx}`;
                 list.appendChild(header);
 
-                // その行の用語リストを作成
                 termsForIndex.forEach(item => {
                     const termName = item.term || '用語名なし';
                     const yomiText = item.yomi || '';
@@ -265,9 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    document.getElementById('close-dict-btn').addEventListener('click', () => {
-        showScreen('home');
-    });
+    document.getElementById('close-dict-btn').addEventListener('click', () => showScreen('home'));
 
     document.getElementById('exit-quiz-btn').addEventListener('click', () => {
         if (confirm("クイズを終了してホームに戻りますか？\n（ここまでの正解は記録されません）")) {
@@ -395,9 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('progressData', JSON.stringify(progressData));
 
         if (!isCorrect) {
-            if (!wrongQuestionIds.includes(qId)) {
-                wrongQuestionIds.push(qId);
-            }
+            if (!wrongQuestionIds.includes(qId)) wrongQuestionIds.push(qId);
         } else {
             wrongQuestionIds = wrongQuestionIds.filter(id => id !== qId);
         }
@@ -431,27 +466,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function recordStudySession() {
-        const now = new Date();
-        const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-        const todayStr = jstNow.toISOString().split('T')[0];
-        
+        const todayStr = getTodayStr();
         const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
         studyLog[todayStr] = (studyLog[todayStr] || 0) + 1;
         localStorage.setItem('studyLog', JSON.stringify(studyLog));
     }
 
-    document.getElementById('home-btn').addEventListener('click', () => {
-        showScreen('home');
-    });
+    document.getElementById('home-btn').addEventListener('click', () => showScreen('home'));
 
     function updateStreakDisplay() {
         const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
         let totalCount = 0;
-        
-        for (let date in studyLog) {
-            totalCount += studyLog[date];
-        }
-        
+        for (let date in studyLog) totalCount += studyLog[date];
         document.getElementById('streak-count').innerText = `累計 ${totalCount}回`;
     }
 });
