@@ -278,28 +278,39 @@ document.addEventListener("DOMContentLoaded", () => {
     function startQuiz(category, limit) {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
+        
+        // ★ 選択された年度を取得
+        const selectedYear = document.getElementById('year-select').value;
+        
+        // ★ 年度で絞り込み
+        let filteredQuestions = allQuestions;
+        if (selectedYear !== 'ALL') {
+            filteredQuestions = allQuestions.filter(q => q.year === selectedYear);
+        }
+
         let pool = [];
 
         if (category === 'REVIEW') {
-            pool = allQuestions.filter(q => wrongQuestionIds.includes(q.id));
+            pool = filteredQuestions.filter(q => wrongQuestionIds.includes(q.id));
             if (pool.length === 0) {
-                alert("現在、復習が必要な問題はありません！素晴らしいです。");
+                alert("選択した年度において、復習が必要な問題はありません！");
                 return;
             }
-            // 復習リストの中身をシャッフル
             pool.sort(() => Math.random() - 0.5);
         } else {
-            let basePool = category === 'ALL' ? [...allQuestions] : allQuestions.filter(q => q.category === category);
+            let basePool = category === 'ALL' ? [...filteredQuestions] : filteredQuestions.filter(q => q.category === category);
             
-            // 未出題と既出題に分ける
+            if (basePool.length === 0) {
+                alert("該当する問題データがありません。");
+                return;
+            }
+
             let unseenPool = basePool.filter(q => !progressData[q.id] || !progressData[q.id].seen);
             let seenPool = basePool.filter(q => progressData[q.id] && progressData[q.id].seen);
 
-            // それぞれ内部でシャッフル
             unseenPool.sort(() => Math.random() - 0.5);
             seenPool.sort(() => Math.random() - 0.5);
 
-            // 未出題を優先して前に持ってくる
             pool = [...unseenPool, ...seenPool];
         }
 
@@ -310,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('quiz');
     }
 
-    // 問題表示（前回間違えた問題バッジ対応）
+    // 問題表示（前回間違えた問題バッジ・年度バッジ対応）
     function loadQuestion() {
         const q = currentQuizSet[currentQuestionIndex];
         const wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
@@ -318,7 +329,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById('question-text').innerText = `【問${q.id}】\n${q.question}`;
         
-        let chipHtml = `<span class="chip">${q.category}</span>`;
+        let chipHtml = `<span class="chip" style="background-color: #E3F2FD; color: #1565C0;">${q.year || '令和8年度'}</span>`;
+        chipHtml += `<span class="chip" style="margin-left: 8px;">${q.category}</span>`;
+        
         if (isWrongBefore) {
             chipHtml += `<span class="chip" style="background-color: #FFEBEE; color: #C62828; margin-left: 8px;">⚠️ 前回間違えた問題</span>`;
         }
