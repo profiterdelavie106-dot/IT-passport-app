@@ -2,187 +2,232 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ITパスポート試験対策（試作）</title>
-    <!-- Google Fonts & Material Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts & Material Symbols / Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app-container">
-        <!-- 1. 学習メイン画面 -->
-        <section id="home-screen" class="screen active">
-            <div class="header">
-                <h2>ITパスポート試験対策（試作）</h2>
-                <div class="stats">
-                    <span class="material-icons fire-icon">local_fire_department</span>
-                    <span id="streak-count" class="streak-text">0日連続</span>
+    <div class="app-container">
+        <!-- 共通トップアプリバー -->
+        <header class="top-app-bar">
+            <h1 class="app-title">ITパスポート試験対策（試作）</h1>
+            <div class="streak-badge" id="streak-badge">
+                <span class="material-icons flame-icon">local_fire_department</span>
+                <span id="streak-count">累計 0回</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 1. ホーム画面（学習タブ） -->
+            <section id="home-screen" class="screen active">
+                <div class="screen-header">
+                    <h2>学習コースを選択</h2>
+                    <p>隙間時間で知識を定着させましょう</p>
                 </div>
-            </div>
-            
-            <div class="card main-card">
-                <h3 class="card-title">学習コースを選択</h3>
-                <p class="card-subtitle">隙間時間で知識を定着させましょう</p>
-                <div id="course-buttons-container"></div>
-            </div>
-            <div style="height: 60px;"></div>
-        </section>
+                <div id="course-buttons-container" class="card button-group">
+                    <!-- app.js から動的に生成されます -->
+                </div>
+            </section>
 
-        <!-- 2. 進捗・カレンダー画面 -->
-        <section id="dashboard-screen" class="screen">
-            <div class="header">
-                <h2>学習記録・進捗</h2>
-            </div>
-
-            <!-- 進捗メーターカード -->
-            <div class="card dashboard-card">
-                <h3 class="card-title">全体進捗（全100問）</h3>
-                <div class="stats-overview">
-                    <div class="stat-box">
-                        <span class="stat-num" id="progress-rate">0%</span>
-                        <span class="stat-label">消化率</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-num" id="accuracy-rate">0%</span>
-                        <span class="stat-label">正答率</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-num" id="wrong-count">0問</span>
-                        <span class="stat-label">要復習</span>
-                    </div>
+            <!-- 2. 進捗画面（進捗タブ：全体 & 年度別） -->
+            <section id="progress-screen" class="screen">
+                <div class="screen-header">
+                    <h2>学習進捗</h2>
+                    <p>コツコツ解いて合格ライン（60%以上）を目指そう！</p>
                 </div>
 
-                <div class="progress-bar-container">
-                    <div class="bar-label"><span>学習済み</span><span id="seen-count-text">0 / 100問</span></div>
-                    <div class="progress-bar"><div id="dashboard-progress-fill"></div></div>
+                <!-- 年度切り替えピルボタン -->
+                <div class="filter-pills" id="progress-year-tabs">
+                    <button class="pill-btn active" data-year="ALL">全年度</button>
+                    <button class="pill-btn" data-year="令和8年度">令和8年</button>
+                    <button class="pill-btn" data-year="令和7年度">令和7年</button>
+                    <button class="pill-btn" data-year="令和6年度">令和6年</button>
                 </div>
 
-                <!-- 分野別プログレス -->
-                <div class="category-progress-list">
-                    <div class="cat-progress-item">
-                        <div class="cat-label-row"><span>ストラテジ系</span><span id="strat-stat">0/34問</span></div>
-                        <div class="sub-progress-bar"><div id="strat-bar" style="width: 0%;"></div></div>
+                <!-- サマリーカード -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-value" id="progress-rate">0%</div>
+                        <div class="stat-label">消化率</div>
                     </div>
-                    <div class="cat-progress-item">
-                        <div class="cat-label-row"><span>マネジメント系</span><span id="mgmt-stat">0/20問</span></div>
-                        <div class="sub-progress-bar"><div id="mgmt-bar" style="width: 0%;"></div></div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="accuracy-rate">0%</div>
+                        <div class="stat-label">正答率</div>
                     </div>
-                    <div class="cat-progress-item">
-                        <div class="cat-label-row"><span>テクノロジ系</span><span id="tech-stat">0/46問</span></div>
-                        <div class="sub-progress-bar"><div id="tech-bar" style="width: 0%;"></div></div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="wrong-count">0問</div>
+                        <div class="stat-label">要復習</div>
                     </div>
                 </div>
-            </div>
 
-            <!-- カレンダーカード -->
-            <div class="card dashboard-card">
-                <div class="calendar-header">
-                    <button id="prev-month-btn" class="icon-btn"><span class="material-icons">chevron_left</span></button>
-                    <h3 id="calendar-month-title">2026年10月</h3>
-                    <button id="next-month-btn" class="icon-btn"><span class="material-icons">chevron_right</span></button>
-                </div>
-                <div class="calendar-weekdays">
-                    <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
-                </div>
-                <div id="calendar-grid" class="calendar-grid"></div>
-            </div>
-            <div style="height: 60px;"></div>
-        </section>
-
-        <!-- 3. 用語集画面 -->
-        <section id="dictionary-screen" class="screen">
-            <div class="header">
-                <button id="close-dict-btn" class="icon-btn" title="ホームに戻る">
-                    <span class="material-icons">arrow_back</span>
-                </button>
-                <h2>用語集 (令和8年度)</h2>
-                <div style="width: 40px;"></div>
-            </div>
-            <div id="dictionary-list" class="dictionary-list"></div>
-        </section>
-
-        <!-- 4. 問題画面 -->
-        <section id="quiz-screen" class="screen">
-            <div class="header-quiz">
-                <button id="exit-quiz-btn" class="icon-btn exit-btn" title="途中で退出する">
-                    <span class="material-icons">close</span>
-                </button>
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div id="progress-fill"></div>
+                <!-- 分野別進捗カード -->
+                <div class="card progress-detail-card">
+                    <div class="card-header-flex">
+                        <span class="card-title" id="scope-total-title">総進捗</span>
+                        <span class="stat-sub" id="seen-count-text">0 / 300問</span>
                     </div>
-                    <span id="question-count-label">1/5</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="dashboard-progress-fill" style="width: 0%;"></div>
+                    </div>
+
+                    <div class="category-stat-list">
+                        <div class="category-stat-item">
+                            <div class="cat-label-row">
+                                <span>ストラテジ系</span>
+                                <span id="strat-stat">0/0問</span>
+                            </div>
+                            <div class="progress-bar-container sub-bar">
+                                <div class="progress-bar strat" id="strat-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="category-stat-item">
+                            <div class="cat-label-row">
+                                <span>マネジメント系</span>
+                                <span id="mgmt-stat">0/0問</span>
+                            </div>
+                            <div class="progress-bar-container sub-bar">
+                                <div class="progress-bar mgmt" id="mgmt-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="category-stat-item">
+                            <div class="cat-label-row">
+                                <span>テクノロジ系</span>
+                                <span id="tech-stat">0/0問</span>
+                            </div>
+                            <div class="progress-bar-container sub-bar">
+                                <div class="progress-bar tech" id="tech-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- 前回間違えた問題バナー（動的に表示/非表示） -->
-            <div id="wrong-alert-banner" class="wrong-alert-banner hidden">
-                <span class="material-icons">warning</span> 前回間違えた問題です！
-            </div>
+            <!-- 3. 記録画面（記録タブ：カレンダー & Xシェア） -->
+            <section id="record-screen" class="screen">
+                <div class="screen-header">
+                    <h2>学習記録</h2>
+                    <p>継続は力なり！炎スタンプを灯そう 🔥</p>
+                </div>
 
-            <div class="chip-container">
-                <span id="category-label" class="chip">カテゴリ</span>
-            </div>
+                <!-- Xシェア用カード -->
+                <div class="share-card">
+                    <div class="share-info">
+                        <span class="share-tag">#今日の積み上げ</span>
+                        <div class="share-count" id="today-study-text">本日の学習: 0セッション完了</div>
+                    </div>
+                    <button id="share-x-btn" class="x-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Xでシェア
+                    </button>
+                </div>
 
-            <div class="card question-card">
-                <p id="question-text">問題文</p>
-                <div class="credit-text-small">出典：IPA ITパスポート試験公開問題</div>
-            </div>
-            <div id="options-container"></div>
-        </section>
+                <!-- カレンダーカード -->
+                <div class="card calendar-card">
+                    <div class="calendar-header">
+                        <button id="prev-month-btn" class="icon-btn"><span class="material-icons">chevron_left</span></button>
+                        <span id="calendar-month-title" class="cal-title">2026年10月</span>
+                        <button id="next-month-btn" class="icon-btn"><span class="material-icons">chevron_right</span></button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid"></div>
+                </div>
+            </section>
 
-        <!-- 5. 結果画面 -->
-        <section id="result-screen" class="screen">
-            <div class="header">
-                <h2>学習完了！</h2>
-            </div>
-            <div class="card result-card">
-                <span class="material-icons result-icon">emoji_events</span>
-                <h3 id="score-text">0 / 0 問 正解</h3>
-                <p class="result-message">お疲れ様でした。毎日の積み重ねが合格への近道です！</p>
-                <button id="home-btn" class="md-btn md-btn-primary">
-                    <span class="material-icons">home</span> ホームへ戻る
-                </button>
-            </div>
-        </section>
+            <!-- 4. クイズ画面 -->
+            <section id="quiz-screen" class="screen">
+                <div class="quiz-top-bar">
+                    <button id="exit-quiz-btn" class="icon-btn" title="中断してホームに戻る">
+                        <span class="material-icons">close</span>
+                    </button>
+                    <div class="progress-bar-container quiz-progress">
+                        <div class="progress-bar" id="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <span id="question-count-label" class="question-count">1/15</span>
+                </div>
 
-        <!-- ボトムシート（解説表示） -->
-        <div id="explanation-sheet" class="bottom-sheet hidden">
-            <div class="sheet-handle"></div>
-            <h3 id="judgement-text">正解！</h3>
-            <p id="explanation-text">解説文</p>
-            <button id="next-btn" class="md-btn md-btn-primary">次の問題へ</button>
-        </div>
-        <div id="overlay" class="hidden"></div>
+                <div class="chip-container"></div>
 
-        <!-- ボトムナビゲーションバー -->
-        <nav id="bottom-nav" class="bottom-nav">
+                <div class="card question-card">
+                    <div id="question-text" class="question-text"></div>
+                </div>
+
+                <div id="options-container" class="options-group"></div>
+            </section>
+
+            <!-- 5. 結果画面 -->
+            <section id="result-screen" class="screen">
+                <div class="card result-card">
+                    <span class="material-icons result-icon">military_tech</span>
+                    <h2>学習完了！</h2>
+                    <p id="score-text" class="score-display">0 / 0 問 正解</p>
+                    <button id="home-btn" class="md-btn md-btn-primary">ホームに戻る</button>
+                </div>
+            </section>
+
+            <!-- 6. 過去問用語集画面 -->
+            <section id="dictionary-screen" class="screen">
+                <div class="dict-top-bar">
+                    <button id="close-dict-btn" class="icon-btn">
+                        <span class="material-icons">arrow_back</span>
+                    </button>
+                    <h2>過去問用語集</h2>
+                </div>
+                <div id="dictionary-list" class="dictionary-container"></div>
+            </section>
+        </main>
+
+        <!-- ボトムナビゲーション（3タブ構成） -->
+        <nav id="bottom-nav">
             <button class="nav-tab active" data-target="home-screen">
                 <span class="material-icons">school</span>
                 <span>学習</span>
             </button>
-            <button class="nav-tab" data-target="dashboard-screen">
+            <button class="nav-tab" data-target="progress-screen">
                 <span class="material-icons">insights</span>
-                <span>進捗・記録</span>
+                <span>進捗</span>
+            </button>
+            <button class="nav-tab" data-target="record-screen">
+                <span class="material-icons">event_note</span>
+                <span>記録</span>
             </button>
         </nav>
     </div>
-    
-    <!-- 出典・利用について モーダル -->
-        <div id="credit-modal" class="modal">
-            <div class="modal-content card">
-                <h3 class="modal-title">問題の出典について</h3>
-                <p class="modal-body">
-                    本アプリでは、独立行政法人情報処理推進機構（IPA）が公開しているITパスポート試験の過去問題を使用しています。<br><br>
-                    出典：独立行政法人情報処理推進機構（IPA）<br>
-                    ITパスポート試験 過去問題（問題冊子・解答例）<br><br>
-                    本アプリはIPAが運営・提供する公式アプリではありません。<br><br>
-                    <small>※問題の著作権はIPAに帰属します。</small>
-                </p>
-                <button id="close-credit-btn" class="md-btn md-btn-primary">閉じる</button>
-            </div>
+
+    <!-- 解説ボトムシート & オーバーレイ -->
+    <div id="overlay" class="overlay"></div>
+    <div id="explanation-sheet" class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-content">
+            <div id="judgement-text" class="judgement"></div>
+            <div id="explanation-text" class="explanation-body"></div>
+            <button id="next-btn" class="md-btn md-btn-primary sheet-btn">次へ進む</button>
         </div>
+    </div>
+
+    <!-- 出典・クレジットモーダル -->
+    <div id="credit-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h3>過去問題の出典・利用について</h3>
+            <p>本アプリに収録されている試験問題および解答は、独立行政法人情報処理推進機構（IPA）が公開している過去問データを引用・改編して作成しています。</p>
+            <ul>
+                <li>令和8年度 ITパスポート試験 公開問題</li>
+                <li>令和7年度 ITパスポート試験 公開問題</li>
+                <li>令和6年度 ITパスポート試験 公開問題</li>
+            </ul>
+            <p class="modal-note">※本アプリはIPAが直接認定・提供するものではありません。</p>
+            <button id="close-credit-btn" class="md-btn md-btn-secondary" style="width: 100%; margin-top: 16px;">閉じる</button>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
