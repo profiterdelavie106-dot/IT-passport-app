@@ -78,6 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
     function setupCategoryButtons() {
         const container = document.getElementById('course-buttons-container');
         container.innerHTML = `
+            <!-- 年度選択ドロップダウン -->
+            <div style="margin-bottom: 20px; text-align: left;">
+                <label for="year-select" style="font-size: 13px; color: var(--md-secondary); font-weight: bold; display: block; margin-bottom: 8px;">出題年度の絞り込み</label>
+                <select id="year-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--md-outline); font-family: inherit; font-size: 15px; background-color: var(--md-surface); outline: none;">
+                    <option value="ALL">すべての年度（令和6年〜8年）</option>
+                    <option value="令和8年度">令和8年度 のみ</option>
+                    <option value="令和7年度">令和7年度 のみ</option>
+                    <option value="令和6年度">令和6年度 のみ</option>
+                </select>
+            </div>
+
+            <!-- 既存の学習ボタン -->
             <button class="md-btn md-btn-primary mode-btn" data-category="ALL" data-limit="15">
                 <span class="material-icons">casino</span> 全分野からランダム（15問）
             </button>
@@ -98,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div style="margin: 24px 0 12px 0; border-top: 1px solid var(--md-outline); opacity: 0.3;"></div>
             
             <button id="open-dict-btn" class="md-btn md-btn-outline">
-                <span class="material-icons">menu_book</span> 令和8年度 過去問用語集
+                <span class="material-icons">menu_book</span> 過去問用語集を開く
             </button>
 
             <!-- 出典リンク -->
@@ -121,6 +133,20 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('open-dict-btn').addEventListener('click', () => {
             showScreen('dict');
         });
+
+        const creditModal = document.getElementById('credit-modal');
+        document.getElementById('open-credit-btn').addEventListener('click', () => {
+            creditModal.classList.add('show');
+        });
+        document.getElementById('close-credit-btn').addEventListener('click', () => {
+            creditModal.classList.remove('show');
+        });
+        creditModal.addEventListener('click', (e) => {
+            if (e.target === creditModal) {
+                creditModal.classList.remove('show');
+            }
+        });
+    }
 
         // モーダルの開閉イベント
         const creditModal = document.getElementById('credit-modal');
