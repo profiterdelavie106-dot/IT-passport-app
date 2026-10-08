@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // メニューボタンの生成（復習ボタン追加）
+    // メニューボタンの生成（復習ボタン・出典リンク追加）
     function setupCategoryButtons() {
         const container = document.getElementById('course-buttons-container');
         container.innerHTML = `
@@ -100,6 +100,13 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="open-dict-btn" class="md-btn md-btn-outline">
                 <span class="material-icons">menu_book</span> 令和8年度 過去問用語集
             </button>
+
+            <!-- 出典リンク -->
+            <div style="text-align: center; margin-top: 24px;">
+                <button id="open-credit-btn" style="background: none; border: none; color: var(--md-secondary); font-size: 12px; text-decoration: underline; cursor: pointer;">
+                    出典・利用について
+                </button>
+            </div>
         `;
 
         document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -113,6 +120,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById('open-dict-btn').addEventListener('click', () => {
             showScreen('dict');
+        });
+
+        // モーダルの開閉イベント
+        const creditModal = document.getElementById('credit-modal');
+        document.getElementById('open-credit-btn').addEventListener('click', () => {
+            creditModal.classList.add('show');
+        });
+        document.getElementById('close-credit-btn').addEventListener('click', () => {
+            creditModal.classList.remove('show');
+        });
+        // 黒い背景部分をタップしても閉じるようにする
+        creditModal.addEventListener('click', (e) => {
+            if (e.target === creditModal) {
+                creditModal.classList.remove('show');
+            }
         });
     }
 
