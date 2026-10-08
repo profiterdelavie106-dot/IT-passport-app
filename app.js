@@ -171,7 +171,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('seen-count-text').innerText = `${seenTotal} / ${totalQuestions}問`;
         document.getElementById('dashboard-progress-fill').style.width = `${progressPercent}%`;
 
-        // 分野別（母数は全問題の割合で自動計算）
         const stratTotal = allQuestions.filter(q => q.category === 'ストラテジ系').length || 34;
         const mgmtTotal = allQuestions.filter(q => q.category === 'マネジメント系').length || 20;
         const techTotal = allQuestions.filter(q => q.category === 'テクノロジ系').length || 46;
@@ -318,4 +317,121 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById('question-count-label').innerText = `${currentQuestionIndex + 1}/${currentQuizSet.length}`;
         
-        const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 10
+        const progressPercent = ((currentQuestionIndex) / currentQuizSet.length) * 100;
+        document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+
+        q.options.forEach((optText, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = optText;
+            btn.onclick = () => checkAnswer(index, q.answer, q.explanation);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedIndex, correctIndex, explanation) {
+        const sheet = document.getElementById('explanation-sheet');
+        const overlay = document.getElementById('overlay');
+        const judgeText = document.getElementById('judgement-text');
+        const expText = document.getElementById('explanation-text');
+        const q = currentQuizSet[currentQuestionIndex];
+
+        const isCorrect = (selectedIndex === correctIndex);
+
+        recordQuestionResult(q.id, isCorrect);
+
+        if (isCorrect) {
+            judgeText.innerText = "正解！ 🎉";
+            judgeText.className = "correct";
+            score++;
+        } else {
+            judgeText.innerText = "不正解... 😢";
+            judgeText.className = "incorrect";
+        }
+        
+        const correctOptionText = q.options[correctIndex];
+        expText.innerHTML = `
+            <div style="background: var(--md-primary-container); color: var(--md-on-primary-container); padding: 12px; border-radius: 8px; margin-bottom: 12px; font-weight: bold; font-size: 14px;">
+                💡 正解：${correctOptionText}
+            </div>
+            <div style="font-size: 15px; line-height: 1.6;">${explanation}</div>
+        `;
+        sheet.classList.add('show');
+        overlay.classList.add('show');
+    }
+
+    function recordQuestionResult(qId, isCorrect) {
+        const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
+        let wrongQuestionIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
+
+        progressData[qId] = {
+            seen: true,
+            lastResult: isCorrect ? 'correct' : 'incorrect',
+            updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem('progressData', JSON.stringify(progressData));
+
+        if (!isCorrect) {
+            if (!wrongQuestionIds.includes(qId)) {
+                wrongQuestionIds.push(qId);
+            }
+        } else {
+            wrongQuestionIds = wrongQuestionIds.filter(id => id !== qId);
+        }
+        localStorage.setItem('wrongQuestionIds', JSON.stringify(wrongQuestionIds));
+    }
+
+    document.getElementById('next-btn').addEventListener('click', () => {
+        if (currentQuizSet.length === 0) return; 
+
+        document.getElementById('explanation-sheet').classList.remove('show');
+        document.getElementById('overlay').classList.remove('show');
+        
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuizSet.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }, 300);
+    });
+
+    function showResult() {
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('score-text').innerText = `${score} / ${currentQuizSet.length} 問 正解`;
+        
+        recordStudySession();
+        updateStreakDisplay();
+        
+        showScreen('result');
+    }
+
+    function recordStudySession() {
+        const now = new Date();
+        const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+        const todayStr = jstNow.toISOString().split('T')[0];
+        
+        const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
+        studyLog[todayStr] = (studyLog[todayStr] || 0) + 1;
+        localStorage.setItem('studyLog', JSON.stringify(studyLog));
+    }
+
+    document.getElementById('home-btn').addEventListener('click', () => {
+        showScreen('home');
+    });
+
+    function updateStreakDisplay() {
+        const studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
+        let totalCount = 0;
+        
+        for (let date in studyLog) {
+            totalCount += studyLog[date];
+        }
+        
+        document.getElementById('streak-count').innerText = `累計 ${totalCount}回`;
+    }
+});
