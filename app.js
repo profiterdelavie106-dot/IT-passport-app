@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     let allQuestions = [];
     let currentQuizSet = [];
-    let currentSessionResults = []; // 今回セッションの結果一時保存
+    let currentSessionResults = [];
     let dictionary = [];
     let currentQuestionIndex = 0;
     let score = 0;
@@ -19,12 +19,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const bottomNav = document.getElementById('bottom-nav');
 
-    // データロード & 自動クレンジング
+    // データ読み込み & AI不要タグのサニタイズ
     Promise.all([
         fetch('questions.json').then(res => res.json()),
         fetch('dictionary.json').then(res => res.json())
     ]).then(([questionsData, dictData]) => {
-        // などの不要なAIタグを除去してサニタイズ
         allQuestions = questionsData.map(q => ({
             ...q,
             question: sanitizeText(q.question),
@@ -165,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 学習進捗の集計
+    // 学習進捗・3段階ステータスの厳密集計ロジック
     function getProgressStats(scopeQuestions) {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         const wrongIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
@@ -173,6 +172,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let seenTotal = 0;
         let latestCorrectTotal = 0;
         let firstCorrectTotal = 0;
+
+        let unseenCount = 0;
+        let wrongCount = 0;
+        let masteredCount = 0;
+
         let stratSeen = 0, stratCorrect = 0;
         let mgmtSeen = 0, mgmtCorrect = 0;
         let techSeen = 0, techCorrect = 0;
@@ -181,9 +185,21 @@ document.addEventListener("DOMContentLoaded", () => {
             const stat = progressData[q.id];
             if (stat && stat.seen) {
                 seenTotal++;
-                if (stat.lastResult === 'correct') latestCorrectTotal++;
-                if (stat.firstResult === 'correct') firstCorrectTotal++;
+                
+                // 初回正答の集計
+                if (stat.firstResult === 'correct') {
+                    firstCorrectTotal++;
+                }
 
+                // 最新状態による3段階分類
+                if (stat.lastResult === 'correct') {
+                    latestCorrectTotal++;
+                    masteredCount++; // 習得済み（直近正解）
+                } else {
+                    wrongCount++; // 要復習（直近不正解）
+                }
+
+                // 分野別
                 if (q.category === 'ストラテジ系') {
                     stratSeen++;
                     if (stat.lastResult === 'correct') stratCorrect++;
@@ -194,40 +210,43 @@ document.addEventListener("DOMContentLoaded", () => {
                     techSeen++;
                     if (stat.lastResult === 'correct') techCorrect++;
                 }
+            } else {
+                unseenCount++; // 未回答
             }
         });
 
         const totalCount = scopeQuestions.length || 1;
-        const wrongInScope = scopeQuestions.filter(q => wrongIds.includes(q.id)).length;
 
         return {
             totalCount,
             seenTotal,
+            unseenCount,
+            wrongCount,
+            masteredCount,
             progressRate: Math.round((seenTotal / totalCount) * 100),
             latestRate: seenTotal > 0 ? Math.round((latestCorrectTotal / seenTotal) * 100) : 0,
             firstRate: seenTotal > 0 ? Math.round((firstCorrectTotal / seenTotal) * 100) : 0,
-            wrongCount: wrongInScope,
             stratSeen, stratCorrect,
             mgmtSeen, mgmtCorrect,
             techSeen, techCorrect
         };
     }
 
+    // ホームサマリー更新（初回正答率は含めない）
     function updateHomeSummary() {
         const stats = getProgressStats(allQuestions);
         const homeProgRate = document.getElementById('home-progress-rate');
         const homeProgCount = document.getElementById('home-progress-count');
         const homeAccRate = document.getElementById('home-accuracy-rate');
-        const homeFirstRate = document.getElementById('home-first-rate');
         const homeWrongCount = document.getElementById('home-wrong-count');
 
         if (homeProgRate) homeProgRate.innerText = `${stats.progressRate}%`;
         if (homeProgCount) homeProgCount.innerText = `${stats.seenTotal}/${stats.totalCount}問`;
         if (homeAccRate) homeAccRate.innerText = `${stats.latestRate}%`;
-        if (homeFirstRate) homeFirstRate.innerText = `初回: ${stats.firstRate}%`;
         if (homeWrongCount) homeWrongCount.innerText = `${stats.wrongCount}問`;
     }
 
+    // 進捗詳細画面の更新（成長の軌跡＋3段階ステータス表示）
     function updateProgressView() {
         let questionsScope = allQuestions;
         if (selectedProgressYear !== 'ALL') {
@@ -236,18 +255,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const stats = getProgressStats(questionsScope);
 
-        const elProgressRate = document.getElementById('progress-rate');
-        const elAccuracyRate = document.getElementById('accuracy-rate');
+        // 成長の軌跡カード
         const elFirstAccuracyRate = document.getElementById('first-accuracy-rate');
+        const elAccuracyRate = document.getElementById('accuracy-rate');
+        const elGrowthDiff = document.getElementById('growth-diff-text');
+        
+        if (elFirstAccuracyRate) elFirstAccuracyRate.innerText = `${stats.firstRate}%`;
+        if (elAccuracyRate) elAccuracyRate.innerText = `${stats.latestRate}%`;
+        if (elGrowthDiff) {
+            const diff = stats.latestRate - stats.firstRate;
+            const sign = diff >= 0 ? '+' : '';
+            elGrowthDiff.innerText = `成長幅: ${sign}${diff}%（初回 ${stats.firstRate}% → 最新 ${stats.latestRate}%）`;
+        }
+
+        // 3段階ステータス内訳
+        const elCountUnseen = document.getElementById('count-unseen');
+        const elCountWrong = document.getElementById('count-wrong');
+        const elCountMastered = document.getElementById('count-mastered');
+        if (elCountUnseen) elCountUnseen.innerText = `${stats.unseenCount}問`;
+        if (elCountWrong) elCountWrong.innerText = `${stats.wrongCount}問`;
+        if (elCountMastered) elCountMastered.innerText = `${stats.masteredCount}問`;
+
+        // 総合プログレス
+        const elProgressRate = document.getElementById('progress-rate');
         const elSeenCountText = document.getElementById('seen-count-text');
         const elDashboardProgressFill = document.getElementById('dashboard-progress-fill');
         const elScopeTotalTitle = document.getElementById('scope-total-title');
         const elProgressWrongTotal = document.getElementById('progress-wrong-total');
 
         if (elProgressRate) elProgressRate.innerText = `${stats.progressRate}%`;
-        if (elAccuracyRate) elAccuracyRate.innerText = `${stats.latestRate}%`;
-        if (elFirstAccuracyRate) elFirstAccuracyRate.innerText = `${stats.firstRate}%`;
-        if (elSeenCountText) elSeenCountText.innerText = `${stats.seenTotal} /${stats.totalCount}問`;
+        if (elSeenCountText) elSeenCountText.innerText = `${stats.seenTotal} / ${stats.totalCount}問`;
         if (elDashboardProgressFill) elDashboardProgressFill.style.width = `${stats.progressRate}%`;
         if (elScopeTotalTitle) elScopeTotalTitle.innerText = selectedProgressYear === 'ALL' ? '総進捗' : `${selectedProgressYear}の進捗`;
         if (elProgressWrongTotal) elProgressWrongTotal.innerText = `${stats.wrongCount}問`;
@@ -268,11 +305,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const elTechStat = document.getElementById('tech-stat');
         const elTechBar = document.getElementById('tech-bar');
 
-        if (elStratStat) elStratStat.innerText = `${stats.stratSeen}/${stratTotal}問 (正答率: ${stratAcc}%)`;
+        if (elStratStat) elStratStat.innerText = `${stats.stratSeen}/${stratTotal}問 (最新: ${stratAcc}%)`;
         if (elStratBar) elStratBar.style.width = `${Math.round((stats.stratSeen / stratTotal) * 100)}%`;
-        if (elMgmtStat) elMgmtStat.innerText = `${stats.mgmtSeen}/${mgmtTotal}問 (正答率: ${mgmtAcc}%)`;
+        if (elMgmtStat) elMgmtStat.innerText = `${stats.mgmtSeen}/${mgmtTotal}問 (最新: ${mgmtAcc}%)`;
         if (elMgmtBar) elMgmtBar.style.width = `${Math.round((stats.mgmtSeen / mgmtTotal) * 100)}%`;
-        if (elTechStat) elTechStat.innerText = `${stats.techSeen}/${techTotal}問 (正答率: ${techAcc}%)`;
+        if (elTechStat) elTechStat.innerText = `${stats.techSeen}/${techTotal}問 (最新: ${techAcc}%)`;
         if (elTechBar) elTechBar.style.width = `${Math.round((stats.techSeen / techTotal) * 100)}%`;
     }
 
@@ -281,30 +318,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         const wrongIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
 
-        // 1. 要復習問題から最優先
+        // 1. 要復習問題（最大2問）
         let wrongPool = allQuestions.filter(q => wrongIds.includes(q.id)).sort(() => Math.random() - 0.5);
 
-        // 2. 未回答問題から補充
+        // 2. 未回答問題（優先補充）
         let unseenPool = allQuestions.filter(q => !progressData[q.id] || !progressData[q.id].seen).sort(() => Math.random() - 0.5);
 
-        // 3. すでに正解した問題から補充
+        // 3. 習得済み（直近正解）から補充
         let seenPool = allQuestions.filter(q => progressData[q.id] && progressData[q.id].seen && !wrongIds.includes(q.id)).sort(() => Math.random() - 0.5);
 
         let selected = [];
-        // 最大2問を要復習から
         selected.push(...wrongPool.slice(0, 2));
 
-        // 残りを未回答から
         const remaining = 5 - selected.length;
         selected.push(...unseenPool.slice(0, remaining));
 
-        // それでも足りなければ正解済みから補充
         if (selected.length < 5) {
             const needMore = 5 - selected.length;
             selected.push(...seenPool.slice(0, needMore));
         }
 
-        // 重複を除去
         currentQuizSet = Array.from(new Set(selected)).sort(() => Math.random() - 0.5);
 
         if (currentQuizSet.length === 0) {
@@ -318,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function startReviewQuiz() {
         const wrongIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
         if (wrongIds.length === 0) {
-            alert("現在、要復習に登録されている問題はありません！🎉\n素晴らしい達成状況です。");
+            alert("現在、要復習に登録されている問題はありません！🎉\nすべて「習得済み（直近正解）」または未回答です。");
             return;
         }
         const reviewPool = allQuestions.filter(q => wrongIds.includes(q.id)).sort(() => Math.random() - 0.5);
@@ -341,7 +374,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
-        // 未回答優先
         let unseen = pool.filter(q => !progressData[q.id] || !progressData[q.id].seen).sort(() => Math.random() - 0.5);
         let seen = pool.filter(q => progressData[q.id] && progressData[q.id].seen).sort(() => Math.random() - 0.5);
 
@@ -393,14 +425,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function checkAnswer(selectedIndex, correctIndex, questionObj) {
-        // 二重クリック防止
+        // 連打による多重回答を防止
         const btns = document.querySelectorAll('.option-btn');
         btns.forEach(b => b.disabled = true);
 
         const isCorrect = (selectedIndex === correctIndex);
         if (isCorrect) score++;
 
-        // 記録保存
+        // 学習状態の記録・更新
         recordQuestionResult(questionObj.id, isCorrect);
         currentSessionResults.push({
             question: questionObj,
@@ -433,6 +465,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (overlay) overlay.classList.add('show');
     }
 
+    // 回答結果の記録ロジック（初回結果の保持 & 要復習リストの即時更新）
     function recordQuestionResult(qId, isCorrect) {
         const progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
         let wrongIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
@@ -441,6 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         progressData[qId] = {
             seen: true,
+            // 初回回答結果を固定保持（未回答時は今回結果を初回として記録）
             firstResult: currentStat.firstResult !== undefined ? currentStat.firstResult : (isCorrect ? 'correct' : 'incorrect'),
             lastResult: isCorrect ? 'correct' : 'incorrect',
             attempts: currentStat.attempts + 1,
@@ -450,15 +484,15 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('progressData', JSON.stringify(progressData));
 
         if (!isCorrect) {
+            // 不正解なら要復習リストへ追加
             if (!wrongIds.includes(qId)) wrongIds.push(qId);
         } else {
-            // 正解したら要復習リストから除外
+            // 正解したら要復習リストから解除（習得済み・直近正解へ昇格）
             wrongIds = wrongIds.filter(id => id !== qId);
         }
         localStorage.setItem('wrongQuestionIds', JSON.stringify(wrongIds));
     }
 
-    // 次の問題へ
     const nextBtn = document.getElementById('next-btn');
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
@@ -483,10 +517,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const scorePercentText = document.getElementById('score-percent-text');
         const percent = Math.round((score / currentQuizSet.length) * 100);
 
-        if (scoreText) scoreText.innerText = `${score} /${currentQuizSet.length} 問 正解`;
+        if (scoreText) scoreText.innerText = `${score} / ${currentQuizSet.length} 問 正解`;
         if (scorePercentText) scorePercentText.innerText = `今回の正答率: ${percent}%`;
 
-        // 間違えた問題の展開
+        // 間違えた問題の一覧展開
         const wrongList = currentSessionResults.filter(r => !r.isCorrect);
         const wrongSectionTitle = document.getElementById('result-wrong-section-title');
         const wrongContainer = document.getElementById('result-wrong-list');
