@@ -35,13 +35,13 @@
                         <span class="count-badge" id="hero-total-count">収録 300問</span>
                     </div>
                     <h2 class="hero-title">スキマ時間で一発合格へ</h2>
-                    <p class="hero-desc">苦手・未回答の問題からAIが自動ピックアップ</p>
+                    <p class="hero-desc">苦手・未回答の問題から優先して5問を自動抽出</p>
                     <button id="start-today-btn" class="md-btn md-btn-primary hero-btn">
                         <span class="material-icons">bolt</span> 今日の5問を始める
                     </button>
                 </div>
 
-                <!-- クイック進捗サマリー -->
+                <!-- クイック進捗サマリー（初回正答率は排除し、直感的な指標に特化） -->
                 <div class="card summary-card">
                     <div class="summary-grid">
                         <div class="summary-item">
@@ -52,12 +52,12 @@
                         <div class="summary-item">
                             <span class="summary-label">最新正答率</span>
                             <span class="summary-val" id="home-accuracy-rate">0%</span>
-                            <span class="summary-sub" id="home-first-rate">初回: 0%</span>
+                            <span class="summary-sub" id="home-accuracy-sub">実力スコア</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">要復習</span>
                             <span class="summary-val warning" id="home-wrong-count">0問</span>
-                            <span class="summary-sub">間違えた問題</span>
+                            <span class="summary-sub">直近不正解</span>
                         </div>
                     </div>
                     <button id="home-review-btn" class="md-btn review-btn-inline">
@@ -65,7 +65,7 @@
                     </button>
                 </div>
 
-                <!-- 年度別・分野別演習セクション -->
+                <!-- 問題演習コース選択 -->
                 <div class="section-title">問題演習コース</div>
                 <div class="card course-card">
                     <div class="filter-group">
@@ -127,20 +127,44 @@
                     <button class="pill-btn" data-year="令和6年度">令和6年</button>
                 </div>
 
-                <!-- サマリーカード -->
-                <div class="stats-row">
-                    <div class="stat-card">
-                        <div class="stat-value" id="progress-rate">0%</div>
-                        <div class="stat-label">進捗率</div>
+                <!-- 成長の軌跡カード（初回正答率 → 最新正答率の対比エリア） -->
+                <div class="card growth-card">
+                    <div class="growth-header">
+                        <span class="material-icons growth-icon">trending_up</span>
+                        <span class="growth-title">学習による成長の軌跡</span>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="accuracy-rate">0%</div>
-                        <div class="stat-label">最新正答率</div>
+                    <div class="growth-body">
+                        <div class="growth-stat">
+                            <span class="growth-label">初回正答率</span>
+                            <span class="growth-val" id="first-accuracy-rate">0%</span>
+                        </div>
+                        <span class="growth-arrow material-icons">arrow_forward</span>
+                        <div class="growth-stat">
+                            <span class="growth-label">最新正答率</span>
+                            <span class="growth-val highlight" id="accuracy-rate">0%</span>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="first-accuracy-rate">0%</div>
-                        <div class="stat-label">初回正答率</div>
+                    <div class="growth-diff" id="growth-diff-text">成長幅: +0%</div>
+                </div>
+
+                <!-- 3段階学習状態の内訳カード -->
+                <div class="card status-breakdown-card">
+                    <div class="card-title" style="margin-bottom: 12px;">問題ステータス内訳</div>
+                    <div class="status-grid">
+                        <div class="status-pill status-unseen">
+                            <span class="status-label">未回答</span>
+                            <span class="status-count" id="count-unseen">0問</span>
+                        </div>
+                        <div class="status-pill status-wrong">
+                            <span class="status-label">要復習</span>
+                            <span class="status-count" id="count-wrong">0問</span>
+                        </div>
+                        <div class="status-pill status-mastered">
+                            <span class="status-label">習得済み(直近正解)</span>
+                            <span class="status-count" id="count-mastered">0問</span>
+                        </div>
                     </div>
+                    <p class="status-note">※「習得済み」は直近の正解を表し、完全な定着を保証するものではありません。定期的な反復をおすすめします。</p>
                 </div>
 
                 <!-- 分野別進捗カード -->
@@ -157,7 +181,7 @@
                         <div class="category-stat-item">
                             <div class="cat-label-row">
                                 <span>ストラテジ系</span>
-                                <span id="strat-stat">0/0問 (正答率: 0%)</span>
+                                <span id="strat-stat">0/0問 (最新: 0%)</span>
                             </div>
                             <div class="progress-bar-container sub-bar">
                                 <div class="progress-bar strat" id="strat-bar" style="width: 0%;"></div>
@@ -166,7 +190,7 @@
                         <div class="category-stat-item">
                             <div class="cat-label-row">
                                 <span>マネジメント系</span>
-                                <span id="mgmt-stat">0/0問 (正答率: 0%)</span>
+                                <span id="mgmt-stat">0/0問 (最新: 0%)</span>
                             </div>
                             <div class="progress-bar-container sub-bar">
                                 <div class="progress-bar mgmt" id="mgmt-bar" style="width: 0%;"></div>
@@ -175,7 +199,7 @@
                         <div class="category-stat-item">
                             <div class="cat-label-row">
                                 <span>テクノロジ系</span>
-                                <span id="tech-stat">0/0問 (正答率: 0%)</span>
+                                <span id="tech-stat">0/0問 (最新: 0%)</span>
                             </div>
                             <div class="progress-bar-container sub-bar">
                                 <div class="progress-bar tech" id="tech-bar" style="width: 0%;"></div>
@@ -258,7 +282,7 @@
                     <h2 class="result-title">演習完了！</h2>
                     <div class="result-score-box">
                         <div class="score-main" id="score-text">0 / 0問 正解</div>
-                        <div class="score-percent" id="score-percent-text">正答率: 0%</div>
+                        <div class="score-percent" id="score-percent-text">今回の正答率: 0%</div>
                     </div>
 
                     <div class="result-actions">
