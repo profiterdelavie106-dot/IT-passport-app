@@ -240,6 +240,124 @@ body {
     padding: 10px;
 }
 
+/* 成長の軌跡カード */
+.growth-card {
+    background: linear-gradient(135deg, #F3E8FF 0%, #FFFFFF 100%);
+    border: 1px solid #D8B4FE;
+    padding: 16px;
+}
+
+.growth-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.growth-icon {
+    color: #7C3AED;
+    font-size: 20px;
+}
+
+.growth-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #581C87;
+}
+
+.growth-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 6px 0;
+}
+
+.growth-stat {
+    text-align: center;
+}
+
+.growth-label {
+    font-size: 11px;
+    color: var(--md-secondary);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.growth-val {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--md-on-surface);
+}
+
+.growth-val.highlight {
+    color: #7C3AED;
+}
+
+.growth-arrow {
+    color: #A855F7;
+    font-size: 22px;
+}
+
+.growth-diff {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #059669;
+    margin-top: 8px;
+    background: #ECFDF5;
+    padding: 4px;
+    border-radius: 6px;
+}
+
+/* 3段階ステータス内訳カード */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.status-pill {
+    padding: 10px 6px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.status-unseen {
+    background: #F1F5F9;
+    color: #475569;
+}
+
+.status-wrong {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.status-mastered {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.status-pill .status-label {
+    font-size: 10px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.status-pill .status-count {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.status-note {
+    font-size: 10px;
+    color: var(--md-outline);
+    line-height: 1.4;
+    margin-top: 6px;
+}
+
 /* ボタン共通 */
 .md-btn {
     display: flex;
@@ -367,34 +485,6 @@ body {
     background: var(--md-primary);
     color: var(--md-on-primary);
     border-color: var(--md-primary);
-}
-
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 14px;
-}
-
-.stat-card {
-    background: #FFFFFF;
-    border-radius: 14px;
-    padding: 12px 6px;
-    text-align: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-}
-
-.stat-value {
-    font-size: 19px;
-    font-weight: 700;
-    color: var(--md-primary);
-}
-
-.stat-label {
-    font-size: 11px;
-    color: var(--md-secondary);
-    font-weight: 600;
-    margin-top: 2px;
 }
 
 .card-header-flex {
