@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let score = 0;
     let selectedProgressYear = 'ALL';
     let currentCalDate = new Date();
+    let isDataLoaded = false;
 
     const screens = {
         home: document.getElementById('home-screen'),
@@ -19,17 +20,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const bottomNav = document.getElementById('bottom-nav');
 
-    // データ読み込み & サニタイズ
+    // データ読み込み & 自動サニタイズ
     Promise.all([
-        fetch('questions.json').then(res => res.json()),
-        fetch('dictionary.json').then(res => res.json())
+        fetch('questions.json').then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        }),
+        fetch('dictionary.json').then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
     ]).then(([questionsData, dictData]) => {
         allQuestions = questionsData.map(q => ({
             ...q,
-            question: sanitizeText(q.question),
-            explanation: sanitizeText(q.explanation)
+            question: sanitizeCiteTag(q.question),
+            explanation: sanitizeCiteTag(q.explanation)
         }));
         dictionary = dictData;
+        isDataLoaded = true;
 
         updateHeroCount();
         renderDictionary();
@@ -40,29 +48,107 @@ document.addEventListener("DOMContentLoaded", () => {
         setupShareButton();
     }).catch(err => {
         console.error("データ読み込みエラー:", err);
-        alert("問題データの読み込みに失敗しました。再読み込みをお試しください。");
+        showGlobalError("問題データの読み込みに失敗しました。インターネット接続を確認し、再読み込みしてください。");
     });
 
     updateStreakDisplay();
 
-    function sanitizeText(str) {
+    // 引用記号 の安全な除去
+    function sanitizeCiteTag(str) {
         if (!str) return '';
         return String(str).replace(/\[cite:\s*[\d,\s]+\]/g, '').trim();
     }
 
-    // 1. 日本時間（Asia/Tokyo）の安全かつ正確な日付取得
-    function getTodayStr() {
-        const formatter = new Intl.DateTimeFormat('ja-JP', {
-            timeZone: 'Asia/Tokyo',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
+    // P0対応：ホワイトリスト方式による解説HTMLの安全な描画処理
+    // 許可タグ：<b>, <strong>, <br>, <p> のみ。属性やスクリプトは一切排除。
+    function renderSafeExplanation(container, rawText) {
+        if (!container) return;
+        container.replaceChildren();
+        if (!rawText) return;
+
+        const cleanText = sanitizeCiteTag(rawText);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(`<div>${cleanText}</div>`, 'text/html');
+        const root = doc.body.firstElementChild || doc.body;
+
+        function sanitizeNode(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return document.createTextNode(node.textContent);
+            }
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.tagName.toLowerCase();
+                if (tagName === 'br') {
+                    return document.createElement('br');
+                }
+                if (tagName === 'b' || tagName === 'strong' || tagName === 'p') {
+                    const el = document.createElement(tagName);
+                    // 属性（onclick等）は一切継承しない
+                    Array.from(node.childNodes).forEach(child => {
+                        const cleanChild = sanitizeNode(child);
+                        if (cleanChild) el.appendChild(cleanChild);
+                    });
+                    return el;
+                }
+                // 未許可タグは外枠を剥がして子要素のテキストのみ抽出
+                const fragment = document.createDocumentFragment();
+                Array.from(node.childNodes).forEach(child => {
+                    const cleanChild = sanitizeNode(child);
+                    if (cleanChild) fragment.appendChild(cleanChild);
+                });
+                return fragment;
+            }
+            return null;
+        }
+
+        const fragment = document.createDocumentFragment();
+        Array.from(root.childNodes).forEach(child => {
+            const clean = sanitizeNode(child);
+            if (clean) fragment.appendChild(clean);
         });
-        const parts = formatter.formatToParts(new Date());
-        const year = parts.find(p => p.type === 'year').value;
-        const month = parts.find(p => p.type === 'month').value;
-        const day = parts.find(p => p.type === 'day').value;
-        return `${year}-${month}-${day}`;
+        container.appendChild(fragment);
+    }
+
+    // localStorage への安全な書き込み（QuotaExceededError防御）
+    function safeSetStorage(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch (e) {
+            console.warn(`localStorage書き込み制限またはエラー [${key}]:`, e);
+            return false;
+        }
+    }
+
+    function safeGetStorage(key, defaultValue) {
+        try {
+            const val = localStorage.getItem(key);
+            if (val === null) return defaultValue;
+            return JSON.parse(val);
+        } catch (e) {
+            console.warn(`localStorage読み込みエラー [${key}]:`, e);
+            return defaultValue;
+        }
+    }
+
+    // 日本時間（Asia/Tokyo）の安全な日付取得
+    function getTodayStr() {
+        try {
+            const formatter = new Intl.DateTimeFormat('ja-JP', {
+                timeZone: 'Asia/Tokyo',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            const parts = formatter.formatToParts(new Date());
+            const year = parts.find(p => p.type === 'year').value;
+            const month = parts.find(p => p.type === 'month').value;
+            const day = parts.find(p => p.type === 'day').value;
+            return `${year}-${month}-${day}`;
+        } catch (e) {
+            const now = new Date();
+            const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+            return jstNow.toISOString().split('T')[0];
+        }
     }
 
     function showScreen(screenName) {
@@ -103,7 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // 5. カレンダーの月移動（月末日付の繰り越し防止）
         const prevBtn = document.getElementById('prev-month-btn');
         const nextBtn = document.getElementById('next-month-btn');
         if (prevBtn) {
@@ -130,16 +215,23 @@ document.addEventListener("DOMContentLoaded", () => {
     function setupHomeActions() {
         const startTodayBtn = document.getElementById('start-today-btn');
         if (startTodayBtn) {
-            startTodayBtn.addEventListener('click', () => startTodayQuiz());
+            startTodayBtn.addEventListener('click', () => {
+                if (!isDataLoaded) return;
+                startTodayQuiz();
+            });
         }
 
         const homeReviewBtn = document.getElementById('home-review-btn');
         if (homeReviewBtn) {
-            homeReviewBtn.addEventListener('click', () => startReviewQuiz());
+            homeReviewBtn.addEventListener('click', () => {
+                if (!isDataLoaded) return;
+                startReviewQuiz();
+            });
         }
 
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                if (!isDataLoaded) return;
                 const category = e.currentTarget.getAttribute('data-category');
                 const limit = parseInt(e.currentTarget.getAttribute('data-limit'), 10) || 5;
                 const yearSelect = document.getElementById('course-year-select');
@@ -186,26 +278,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 3 & 6. 学習進捗集計（NaN防止、未集計「—」対応）
+    // 学習進捗の厳密な集計ロジック
     function getProgressStats(scopeQuestions) {
-        let progressData = {};
-        try {
-            progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
-        } catch (e) {
-            progressData = {};
-        }
+        const progressData = safeGetStorage('progressData', {});
+        const wrongIds = safeGetStorage('wrongQuestionIds', []);
 
-        let wrongIds = [];
-        try {
-            wrongIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
-            if (!Array.isArray(wrongIds)) wrongIds = [];
-        } catch (e) {
-            wrongIds = [];
-        }
-
-        // 4. 有効な問題IDだけに限定
         const validQuestionIds = new Set(allQuestions.map(q => q.id));
-        const filteredWrongIds = new Set(wrongIds.filter(id => validQuestionIds.has(id)));
+        const filteredWrongIds = new Set(Array.isArray(wrongIds) ? wrongIds.filter(id => validQuestionIds.has(id)) : []);
 
         let seenTotal = 0;
         let latestCorrectTotal = 0;
@@ -254,7 +333,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const totalCount = scopeQuestions.length || 1;
         const progressRate = Math.round((seenTotal / totalCount) * 100);
 
-        // 回答実績がない場合は null（表示時に "—" と判定）
         const latestRate = seenTotal > 0 ? Math.round((latestCorrectTotal / seenTotal) * 100) : null;
         const firstRate = seenTotal > 0 ? Math.round((firstCorrectTotal / seenTotal) * 100) : null;
 
@@ -262,7 +340,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const mgmtRate = mgmtSeen > 0 ? Math.round((mgmtCorrect / mgmtSeen) * 100) : null;
         const techRate = techSeen > 0 ? Math.round((techCorrect / techSeen) * 100) : null;
 
-        // 要復習数：対象スコープ内でfilteredWrongIdsに含まれる件数
         const scopeWrongCount = scopeQuestions.filter(q => filteredWrongIds.has(q.id)).length;
 
         return {
@@ -305,12 +382,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const elAccuracyRate = document.getElementById('accuracy-rate');
         const elGrowthDiff = document.getElementById('growth-diff-text');
 
-        if (elFirstAccuracyRate) {
-            elFirstAccuracyRate.textContent = stats.firstRate !== null ? `${stats.firstRate}%` : '—';
-        }
-        if (elAccuracyRate) {
-            elAccuracyRate.textContent = stats.latestRate !== null ? `${stats.latestRate}%` : '—';
-        }
+        if (elFirstAccuracyRate) elFirstAccuracyRate.textContent = stats.firstRate !== null ? `${stats.firstRate}%` : '—';
+        if (elAccuracyRate) elAccuracyRate.textContent = stats.latestRate !== null ? `${stats.latestRate}%` : '—';
         if (elGrowthDiff) {
             if (stats.latestRate !== null && stats.firstRate !== null) {
                 const diff = stats.latestRate - stats.firstRate;
@@ -365,19 +438,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (elTechBar) elTechBar.style.width = `${Math.round((stats.techSeen / techTotal) * 100)}%`;
     }
 
-    // 4. 復習問題の安全な開始
     function getSafeWrongIds() {
-        let wrongIds = [];
-        try {
-            wrongIds = JSON.parse(localStorage.getItem('wrongQuestionIds') || '[]');
-            if (!Array.isArray(wrongIds)) wrongIds = [];
-        } catch (e) {
-            wrongIds = [];
-        }
+        const wrongIds = safeGetStorage('wrongQuestionIds', []);
         const validQuestionIds = new Set(allQuestions.map(q => q.id));
-        return wrongIds.filter(id => validQuestionIds.has(id));
+        return Array.isArray(wrongIds) ? wrongIds.filter(id => validQuestionIds.has(id)) : [];
     }
 
+    // 「今日の5問」出題アルゴリズム
     function startTodayQuiz() {
         if (!allQuestions || allQuestions.length === 0) {
             alert("問題データが読み込まれていません。");
@@ -385,13 +452,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const targetCount = Math.min(5, allQuestions.length);
-        let progressData = {};
-        try {
-            progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
-        } catch (e) {
-            progressData = {};
-        }
-
+        const progressData = safeGetStorage('progressData', {});
         const validWrongIds = new Set(getSafeWrongIds());
 
         let wrongPool = allQuestions
@@ -420,6 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        // 優先順位：要復習(最大2) → 未回答 → 残りの要復習 → 習得済み
         addQuestions(wrongPool, 2);
         addQuestions(unseenPool, targetCount - selectedMap.size);
 
@@ -466,13 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        let progressData = {};
-        try {
-            progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
-        } catch (e) {
-            progressData = {};
-        }
-
+        const progressData = safeGetStorage('progressData', {});
         let unseen = pool.filter(q => !progressData[q.id] || !progressData[q.id].seen).sort(() => Math.random() - 0.5);
         let seen = pool.filter(q => progressData[q.id] && progressData[q.id].seen).sort(() => Math.random() - 0.5);
 
@@ -488,7 +544,6 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen('quiz');
     }
 
-    // 2. HTMLへの文字列埋め込み排除（DOM構築 & textContent設定）
     function loadQuestion() {
         const q = currentQuizSet[currentQuestionIndex];
         const validWrongIds = new Set(getSafeWrongIds());
@@ -552,6 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function checkAnswer(selectedIndex, correctIndex, questionObj) {
+        // 二重タップ防止
         const btns = document.querySelectorAll('.option-btn');
         btns.forEach(b => { b.disabled = true; });
 
@@ -592,7 +648,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const descBox = document.createElement('div');
             descBox.style.fontSize = '13px';
             descBox.style.lineHeight = '1.6';
-            descBox.textContent = questionObj.explanation;
+            // 安全なHTMLパーサーで太字・改行を維持して描画
+            renderSafeExplanation(descBox, questionObj.explanation);
 
             expText.appendChild(ansBox);
             expText.appendChild(descBox);
@@ -602,22 +659,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (overlay) overlay.classList.add('show');
     }
 
-    // 3. 学習履歴の安全な保存（firstResult保持・数値保護）
     function recordQuestionResult(qId, isCorrect) {
-        let progressData = {};
-        try {
-            progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
-        } catch (e) {
-            progressData = {};
-        }
-
+        const progressData = safeGetStorage('progressData', {});
         let wrongIds = getSafeWrongIds();
 
         const currentStat = progressData[qId] || {};
         const safeAttempts = (typeof currentStat.attempts === 'number' && !isNaN(currentStat.attempts)) ? currentStat.attempts : 0;
         const safeCorrectCount = (typeof currentStat.correctCount === 'number' && !isNaN(currentStat.correctCount)) ? currentStat.correctCount : 0;
 
-        // firstResult は一度セットされたら書き換えない
         const firstResultValue = currentStat.firstResult !== undefined ? currentStat.firstResult : (isCorrect ? 'correct' : 'incorrect');
 
         progressData[qId] = {
@@ -628,14 +677,14 @@ document.addEventListener("DOMContentLoaded", () => {
             correctCount: safeCorrectCount + (isCorrect ? 1 : 0),
             updatedAt: new Date().toISOString()
         };
-        localStorage.setItem('progressData', JSON.stringify(progressData));
+        safeSetStorage('progressData', progressData);
 
         if (!isCorrect) {
             if (!wrongIds.includes(qId)) wrongIds.push(qId);
         } else {
             wrongIds = wrongIds.filter(id => id !== qId);
         }
-        localStorage.setItem('wrongQuestionIds', JSON.stringify(wrongIds));
+        safeSetStorage('wrongQuestionIds', wrongIds);
     }
 
     const nextBtn = document.getElementById('next-btn');
@@ -657,7 +706,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 2. 結果画面の安全なDOM生成
     function showResult() {
         const scoreText = document.getElementById('score-text');
         const scorePercentText = document.getElementById('score-percent-text');
@@ -691,7 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const qExp = document.createElement('div');
                     qExp.className = 'wrong-q-exp';
-                    qExp.textContent = item.question.explanation;
+                    renderSafeExplanation(qExp, item.question.explanation);
 
                     card.appendChild(qTitle);
                     card.appendChild(qAns);
@@ -710,23 +758,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function recordStudySession() {
         const todayStr = getTodayStr();
-        let studyLog = {};
-        try {
-            studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-        } catch (e) {
-            studyLog = {};
-        }
+        const studyLog = safeGetStorage('studyLog', {});
         studyLog[todayStr] = (studyLog[todayStr] || 0) + 1;
-        localStorage.setItem('studyLog', JSON.stringify(studyLog));
+        safeSetStorage('studyLog', studyLog);
     }
 
     function updateStreakDisplay() {
-        let studyLog = {};
-        try {
-            studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-        } catch (e) {
-            studyLog = {};
-        }
+        const studyLog = safeGetStorage('studyLog', {});
         let total = 0;
         for (let d in studyLog) {
             if (typeof studyLog[d] === 'number') total += studyLog[d];
@@ -737,12 +775,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateShareBanner() {
         const todayStr = getTodayStr();
-        let studyLog = {};
-        try {
-            studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-        } catch (e) {
-            studyLog = {};
-        }
+        const studyLog = safeGetStorage('studyLog', {});
         const todayCount = studyLog[todayStr] || 0;
         const elTodayText = document.getElementById('today-study-text');
         if (elTodayText) {
@@ -755,24 +788,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!shareBtn) return;
         shareBtn.addEventListener('click', () => {
             const todayStr = getTodayStr();
-            let studyLog = {};
-            try {
-                studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-            } catch (e) {
-                studyLog = {};
-            }
+            const studyLog = safeGetStorage('studyLog', {});
             const todayCount = studyLog[todayStr] || 0;
-
-            let progressData = {};
-            try {
-                progressData = JSON.parse(localStorage.getItem('progressData') || '{}');
-            } catch (e) {
-                progressData = {};
-            }
+            const progressData = safeGetStorage('progressData', {});
             const seenCount = Object.keys(progressData).length;
+            const totalQ = allQuestions.length || 300;
 
             const text = encodeURIComponent(
-                `【ITパスポート過去問トレーニング】\n本日 ${todayCount} セッション完了！\n累計消化数: ${seenCount}/300問\n隙間時間で一発合格を目指して勉強中✍️🔥\n\n#ITパスポート #今日の積み上げ #資格勉強`
+                `【ITパスポート過去問トレーニング】\n本日 ${todayCount} セッション完了！\n累計消化数: ${seenCount}/${totalQ}問\n隙間時間で合格を目指して学習中✍️🔥\n\n#ITパスポート #今日の積み上げ #資格勉強`
             );
             const url = encodeURIComponent(window.location.href);
             window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
@@ -791,13 +814,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const firstDay = new Date(year, month, 1).getDay();
         const lastDate = new Date(year, month + 1, 0).getDate();
-
-        let studyLog = {};
-        try {
-            studyLog = JSON.parse(localStorage.getItem('studyLog') || '{}');
-        } catch (e) {
-            studyLog = {};
-        }
+        const studyLog = safeGetStorage('studyLog', {});
         const todayStr = getTodayStr();
 
         for (let i = 0; i < firstDay; i++) {
@@ -834,7 +851,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 2. 用語集リストの安全なDOM生成
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         if (!list) return;
@@ -883,5 +899,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
         });
+    }
+
+    function showGlobalError(msg) {
+        const main = document.querySelector('.main-content');
+        if (main) {
+            const errBox = document.createElement('div');
+            errBox.style.cssText = 'background: #FFEBEE; color: #C62828; padding: 16px; border-radius: 12px; margin: 20px 0; font-size: 13px; line-height: 1.6; border: 1px solid #FFCDD2;';
+            errBox.textContent = msg;
+            main.prepend(errBox);
+        }
     }
 });
