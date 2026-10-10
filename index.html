@@ -19,7 +19,7 @@
                 <h1 class="app-title">ITパスポート過去問トレーニング</h1>
                 <p class="app-subtitle">令和6〜8年度の公開問題で合格を目指そう</p>
             </div>
-            <div class="streak-badge" id="streak-badge" title="連続学習ストリーク">
+            <div class="streak-badge" id="streak-badge" title="累計学習セッション数">
                 <span class="material-icons flame-icon">local_fire_department</span>
                 <span id="streak-count">累計 0回</span>
             </div>
@@ -34,14 +34,14 @@
                         <span class="free-badge">無料・登録不要</span>
                         <span class="count-badge" id="hero-total-count">収録 300問</span>
                     </div>
-                    <h2 class="hero-title">スキマ時間で一発合格へ</h2>
+                    <h2 class="hero-title">スキマ時間で合格へ</h2>
                     <p class="hero-desc">苦手・未回答の問題から優先して5問を自動抽出</p>
                     <button id="start-today-btn" class="md-btn md-btn-primary hero-btn">
                         <span class="material-icons">bolt</span> 今日の5問を始める
                     </button>
                 </div>
 
-                <!-- クイック進捗サマリー（初回正答率は排除し、直感的な指標に特化） -->
+                <!-- クイック進捗サマリー -->
                 <div class="card summary-card">
                     <div class="summary-grid">
                         <div class="summary-item">
@@ -51,7 +51,7 @@
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">最新正答率</span>
-                            <span class="summary-val" id="home-accuracy-rate">0%</span>
+                            <span class="summary-val" id="home-accuracy-rate">—</span>
                             <span class="summary-sub" id="home-accuracy-sub">実力スコア</span>
                         </div>
                         <div class="summary-item">
@@ -119,7 +119,6 @@
                     <p>分野別の得点力を分析して合格ライン（60%）を突破しよう</p>
                 </div>
 
-                <!-- 年度切り替えピルボタン -->
                 <div class="filter-pills" id="progress-year-tabs">
                     <button class="pill-btn active" data-year="ALL">全年度</button>
                     <button class="pill-btn" data-year="令和8年度">令和8年</button>
@@ -127,7 +126,7 @@
                     <button class="pill-btn" data-year="令和6年度">令和6年</button>
                 </div>
 
-                <!-- 成長の軌跡カード（初回正答率 → 最新正答率の対比エリア） -->
+                <!-- 成長の軌跡カード -->
                 <div class="card growth-card">
                     <div class="growth-header">
                         <span class="material-icons growth-icon">trending_up</span>
@@ -136,15 +135,15 @@
                     <div class="growth-body">
                         <div class="growth-stat">
                             <span class="growth-label">初回正答率</span>
-                            <span class="growth-val" id="first-accuracy-rate">0%</span>
+                            <span class="growth-val" id="first-accuracy-rate">—</span>
                         </div>
                         <span class="growth-arrow material-icons">arrow_forward</span>
                         <div class="growth-stat">
                             <span class="growth-label">最新正答率</span>
-                            <span class="growth-val highlight" id="accuracy-rate">0%</span>
+                            <span class="growth-val highlight" id="accuracy-rate">—</span>
                         </div>
                     </div>
-                    <div class="growth-diff" id="growth-diff-text">成長幅: +0%</div>
+                    <div class="growth-diff" id="growth-diff-text">成長幅: —（未回答）</div>
                 </div>
 
                 <!-- 3段階学習状態の内訳カード -->
@@ -181,7 +180,7 @@
                         <div class="category-stat-item">
                             <div class="cat-label-row">
                                 <span>ストラテジ系</span>
-                                <span id="strat-stat">0/0問 (最新: 0%)</span>
+                                <span id="strat-stat">0/0問 (最新: —)</span>
                             </div>
                             <div class="progress-bar-container sub-bar">
                                 <div class="progress-bar strat" id="strat-bar" style="width: 0%;"></div>
@@ -190,7 +189,7 @@
                         <div class="category-stat-item">
                             <div class="cat-label-row">
                                 <span>マネジメント系</span>
-                                <span id="mgmt-stat">0/0問 (最新: 0%)</span>
+                                <span id="mgmt-stat">0/0問 (最新: —)</span>
                             </div>
                             <div class="progress-bar-container sub-bar">
                                 <div class="progress-bar mgmt" id="mgmt-bar" style="width: 0%;"></div>
@@ -199,7 +198,7 @@
                         <div class="category-stat-item">
                             <div class="cat-label-row">
                                 <span>テクノロジ系</span>
-                                <span id="tech-stat">0/0問 (最新: 0%)</span>
+                                <span id="tech-stat">0/0問 (最新: —)</span>
                             </div>
                             <div class="progress-bar-container sub-bar">
                                 <div class="progress-bar tech" id="tech-bar" style="width: 0%;"></div>
@@ -208,7 +207,7 @@
                     </div>
                 </div>
 
-                <!-- 要復習リストへの直接導線 -->
+                <!-- 要復習リスト直接導線 -->
                 <div class="card" style="text-align: center;">
                     <div style="font-size: 14px; color: var(--md-secondary); margin-bottom: 8px;">
                         現在の要復習問題: <strong id="progress-wrong-total" style="color: var(--md-error);">0問</strong>
@@ -226,7 +225,6 @@
                     <p>日々の積み上げを記録し、Xで仲間と共有しよう 🔥</p>
                 </div>
 
-                <!-- Xシェアバナーカード -->
                 <div class="share-card">
                     <div class="share-info">
                         <span class="share-tag">#今日の積み上げ</span>
@@ -240,7 +238,6 @@
                     </button>
                 </div>
 
-                <!-- カレンダーカード -->
                 <div class="card calendar-card">
                     <div class="calendar-header">
                         <button id="prev-month-btn" class="icon-btn"><span class="material-icons">chevron_left</span></button>
@@ -275,7 +272,7 @@
                 <div id="options-container" class="options-group"></div>
             </section>
 
-            <!-- 5. 結果画面（詳細復習リスト付き） -->
+            <!-- 5. 結果画面 -->
             <section id="result-screen" class="screen">
                 <div class="card result-card">
                     <span class="material-icons result-icon">emoji_events</span>
@@ -295,7 +292,6 @@
                     </div>
                 </div>
 
-                <!-- 今回間違えた問題の一覧展開 -->
                 <div class="section-title" id="result-wrong-section-title" style="display: none;">間違えた問題の振り返り</div>
                 <div id="result-wrong-list" class="wrong-review-container"></div>
             </section>
@@ -313,7 +309,6 @@
             </section>
         </main>
 
-        <!-- ボトムナビゲーション -->
         <nav id="bottom-nav">
             <button class="nav-tab active" data-target="home-screen">
                 <span class="material-icons">school</span>
@@ -341,7 +336,7 @@
         </div>
     </div>
 
-    <!-- 出典・IPA利用条件モーダル -->
+    <!-- 出典モーダル -->
     <div id="credit-modal" class="modal-overlay">
         <div class="modal-card">
             <h3>出典・利用について</h3>
