@@ -851,31 +851,102 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+        // 用語集（分野別 ＞ 五十音行 の排他アコーディオン描画）
     function renderDictionary() {
         const list = document.getElementById('dictionary-list');
         if (!list) return;
         list.replaceChildren();
 
+        const categories = ['ストラテジ系', 'マネジメント系', 'テクノロジ系'];
         const indexOrder = ['A〜Z', 'あ行', 'か行', 'さ行', 'た行', 'な行', 'は行', 'ま行', 'や行', 'ら行', 'わ行'];
 
-        indexOrder.forEach(idx => {
-            const items = dictionary.filter(item => item.index === idx);
-            if (items.length > 0) {
-                const header = document.createElement('div');
-                header.className = 'dict-index-header';
+        categories.forEach(cat => {
+            const catTerms = dictionary.filter(item => item.category === cat);
+            if (catTerms.length === 0) return;
 
-                const icon = document.createElement('span');
-                icon.className = 'material-icons';
-                icon.style.fontSize = '16px';
-                icon.style.marginRight = '6px';
-                icon.textContent = 'menu_book';
+            // 分野コンテナ
+            const catSection = document.createElement('div');
+            catSection.className = 'dict-cat-section';
 
-                const headerText = document.createTextNode(idx);
-                header.appendChild(icon);
-                header.appendChild(headerText);
-                list.appendChild(header);
+            // 分野ヘッダーボタン
+            const catHeader = document.createElement('button');
+            catHeader.type = 'button';
+            catHeader.className = 'dict-cat-header';
 
-                items.forEach(item => {
+            let catColorClass = 'strat-color';
+            let catIcon = 'bar_chart';
+            if (cat === 'マネジメント系') { catColorClass = 'mgmt-color'; catIcon = 'people'; }
+            if (cat === 'テクノロジ系') { catColorClass = 'tech-color'; catIcon = 'computer'; }
+
+            catHeader.innerHTML = `
+                <div class="dict-cat-title">
+                    <span class="material-icons ${catColorClass}">${catIcon}</span>
+                    <span>${cat}</span>
+                    <span class="dict-count-badge">${catTerms.length}語</span>
+                </div>
+                <span class="material-icons dict-arrow">expand_more</span>
+            `;
+
+            // 分野コンテンツ（行一覧の格納庫）
+            const catContent = document.createElement('div');
+            catContent.className = 'dict-cat-content';
+
+            // 分野タップ時の排他開閉
+            catHeader.addEventListener('click', () => {
+                const isOpened = catSection.classList.contains('open');
+
+                // 他の全分野を閉じる
+                document.querySelectorAll('.dict-cat-section').forEach(s => {
+                    s.classList.remove('open');
+                });
+
+                // 閉じていた場合は開く
+                if (!isOpened) {
+                    catSection.classList.add('open');
+                }
+            });
+
+            // 行（インデックス）ごとの生成
+            indexOrder.forEach(idx => {
+                const idxTerms = catTerms.filter(item => item.index === idx);
+                if (idxTerms.length === 0) return;
+
+                const idxGroup = document.createElement('div');
+                idxGroup.className = 'dict-idx-group';
+
+                const idxHeader = document.createElement('button');
+                idxHeader.type = 'button';
+                idxHeader.className = 'dict-idx-header';
+                idxHeader.innerHTML = `
+                    <div class="dict-idx-title">
+                        <span class="material-icons" style="font-size: 16px;">menu_book</span>
+                        <span>${idx}</span>
+                        <span class="dict-sub-count">(${idxTerms.length})</span>
+                    </div>
+                    <span class="material-icons dict-idx-arrow">chevron_right</span>
+                `;
+
+                const idxContent = document.createElement('div');
+                idxContent.className = 'dict-idx-content';
+
+                // 行タップ時の排他開閉（同一分野内）
+                idxHeader.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isIdxOpened = idxGroup.classList.contains('open');
+
+                    // 同じ分野内の他の行を閉じる
+                    catContent.querySelectorAll('.dict-idx-group').forEach(g => {
+                        g.classList.remove('open');
+                    });
+
+                    // 閉じていた場合は開く
+                    if (!isIdxOpened) {
+                        idxGroup.classList.add('open');
+                    }
+                });
+
+                // 用語カードの生成（textContentによる安全描画）
+                idxTerms.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'dict-item';
 
@@ -895,9 +966,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     descEl.textContent = item.description;
                     card.appendChild(descEl);
 
-                    list.appendChild(card);
+                    idxContent.appendChild(card);
                 });
-            }
+
+                idxGroup.appendChild(idxHeader);
+                idxGroup.appendChild(idxContent);
+                catContent.appendChild(idxGroup);
+            });
+
+            catSection.appendChild(catHeader);
+            catSection.appendChild(catContent);
+            list.appendChild(catSection);
         });
     }
 
