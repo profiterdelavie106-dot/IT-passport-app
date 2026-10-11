@@ -829,3 +829,137 @@ body {
     background: none; border: none; color: var(--md-on-surface-variant);
     cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;
 }
+
+/* ===================================================
+   用語集アコーディオンUI（スマホ最適化）
+   =================================================== */
+.dict-cat-section {
+    background: #FFFFFF;
+    border-radius: 16px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.dict-cat-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+}
+
+.dict-cat-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--md-on-surface);
+}
+
+.dict-count-badge {
+    background: var(--md-secondary-container);
+    color: var(--md-on-secondary-container);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.dict-arrow {
+    color: var(--md-secondary);
+    transition: transform 0.25s ease;
+}
+
+.dict-cat-section.open .dict-arrow {
+    transform: rotate(180deg);
+}
+
+/* 分野内コンテンツ */
+.dict-cat-content {
+    display: none;
+    padding: 0 12px 12px 12px;
+    background: #FAF9FD;
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.dict-cat-section.open .dict-cat-content {
+    display: block;
+}
+
+/* 行（インデックス）アコーディオン */
+.dict-idx-group {
+    margin-top: 8px;
+    border-radius: 10px;
+    background: #FFFFFF;
+    border: 1px solid var(--md-outline-variant);
+    overflow: hidden;
+}
+
+.dict-idx-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--md-primary);
+}
+
+.dict-idx-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dict-sub-count {
+    font-size: 11px;
+    color: var(--md-secondary);
+    font-weight: 500;
+}
+
+.dict-idx-arrow {
+    font-size: 18px;
+    color: var(--md-secondary);
+    transition: transform 0.2s ease;
+}
+
+.dict-idx-group.open .dict-idx-arrow {
+    transform: rotate(90deg);
+}
+
+/* 用語カード一覧 */
+.dict-idx-content {
+    display: none;
+    padding: 8px 10px 10px 10px;
+    background: #FFFFFF;
+    border-top: 1px dashed var(--md-outline-variant);
+}
+
+.dict-idx-group.open .dict-idx-content {
+    display: block;
+}
+
+.dict-idx-content .dict-item {
+    background: var(--md-surface);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: none;
+    margin-bottom: 8px;
+}
+
+.dict-idx-content .dict-item:last-child {
+    margin-bottom: 0;
+}
